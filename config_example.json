@@ -1,0 +1,7 @@
+{
+  "mongo_connection_string": "mongodb+srv://<username>:<password>@<host>/bitrot?retryWrites=true&w=majority",
+  "paths": [
+    "/home/user/dir1",
+    "/home/user/dir2"
+  ]
+}
