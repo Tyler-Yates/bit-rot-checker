@@ -1,0 +1,6 @@
+secrets.json
+venv/
+paths.txt
+.idea/
+__pycache__/
+*.pyc
