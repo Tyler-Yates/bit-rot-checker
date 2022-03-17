@@ -21,10 +21,11 @@ def main():
         print(f"Processing files in {path}...\n")
         for root, dirs, files in os.walk(path):
             for file in files:
+                true_file_path = os.path.join(root, file)
                 if should_skip_folder(root):
+                    print(f"Skipping {true_file_path}")
                     continue
 
-                true_file_path = os.path.join(root, file)
                 saved_file_path = true_file_path.replace(path, "")
                 file_size = os.path.getsize(true_file_path)
                 file_crc = get_crc32(true_file_path)
