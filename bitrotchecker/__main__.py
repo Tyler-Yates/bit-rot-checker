@@ -3,7 +3,7 @@ import os
 from bitrotchecker.src.configuration_util import get_paths
 from bitrotchecker.src.encryption_util import EncryptionUtil
 from bitrotchecker.src.file_record import FileRecord
-from bitrotchecker.src.file_util import get_crc32, should_skip_folder
+from bitrotchecker.src.file_util import get_crc32, should_skip_file
 from bitrotchecker.src.mongo_util import MongoUtil
 
 
@@ -22,7 +22,7 @@ def main():
         for root, dirs, files in os.walk(path):
             for file in files:
                 true_file_path = os.path.join(root, file)
-                if should_skip_folder(root):
+                if should_skip_file(true_file_path):
                     print(f"Skipping {true_file_path}")
                     continue
 

@@ -16,12 +16,12 @@ def get_crc32(file_path: str) -> str:
     return "%X" % (checksum & 0xFFFFFFFF)
 
 
-def should_skip_folder(folder_path: str) -> bool:
-    folder_names = folder_path.split(os.path.sep)
+def should_skip_file(file_path: str) -> bool:
+    path_parts = file_path.split(os.path.sep)
 
     for prefix in SKIP_PREFIXES:
-        for folder_name in folder_names:
-            if folder_name.startswith(prefix):
+        for path_parth in path_parts:
+            if path_parth.startswith(prefix):
                 return True
 
     return False
