@@ -4,3 +4,4 @@ paths.txt
 .idea/
 __pycache__/
 *.pyc
+keyset.json

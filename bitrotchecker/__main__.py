@@ -1,32 +1,43 @@
 import os
 from typing import List
 
-from cryptography.fernet import Fernet
-
+from bitrotchecker.encryption_util import EncryptionUtil
+from bitrotchecker.file_record import FileRecord
 from bitrotchecker.file_util import get_crc32
-from bitrotchecker.mongo_util import get_files_collection
-from bitrotchecker.secret_util import get_fernet_key
+from bitrotchecker.mongo_util import MongoUtil
 
 
 def main():
-    key = get_fernet_key()
-    fernet = Fernet(key)
+    mongo_util = MongoUtil()
 
     paths = _get_paths()
+    failed_files = []
     for path in paths:
+        num_failures = 0
+        print("\n==========================================")
+        print(f"Processing files in {path}...\n")
         for root, dirs, files in os.walk(path):
             for file in files:
-                file_path = os.path.join(root, file)
-                file_crc = get_crc32(file_path)
-                print(f"{file_path} - {file_crc}")
+                true_file_path = os.path.join(root, file)
+                saved_file_path = true_file_path.replace(path, "")
+                file_size = os.path.getsize(true_file_path)
+                file_crc = get_crc32(true_file_path)
 
-    data = "D:\\Program Files\\Test\\SomeReallyLongFolder\\asdfkljalksdghlkasdhglkhaslkdghlashdglkashldgkhalksdghl.txt"
+                file_record = FileRecord(saved_file_path, file_size, file_crc)
+                result = mongo_util.process_file_record(root, file_record)
+                if result:
+                    print(f"FAIL: {result} - {file_record}")
+                    num_failures = num_failures + 1
+                    failed_files.append(f"{true_file_path} - {result}")
+                else:
+                    print(f"PASS: {file_record}")
 
-    encoded_data = fernet.encrypt(data.encode())
-    print(encoded_data.decode())
-    print(fernet.decrypt(encoded_data).decode())
+        print(f"\nFailures in {path}: {num_failures}")
 
-    # files_collection = get_files_collection()
+    print("\n===================================")
+    print(f"Total failures: {len(failed_files)}")
+    for failed_file in failed_files:
+        print(failed_file)
 
 
 def _get_paths() -> List[str]:
@@ -42,5 +53,16 @@ def _get_paths() -> List[str]:
     return paths
 
 
+def _test_encrypt(encryption_util: EncryptionUtil, input_data: str):
+    encrypted_data = encryption_util.encrypt_string("Test")
+    decrypted_data = encryption_util.decrypt_string(encrypted_data)
+    print(f"{input_data} - {encrypted_data} - {decrypted_data}")
+
+
 if __name__ == '__main__':
+    # encryption = EncryptionUtil()
+    # _test_encrypt(encryption, "Test")
+    # _test_encrypt(encryption, "Test")
+    # _test_encrypt(encryption, "Test")
+
     main()

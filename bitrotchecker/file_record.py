@@ -3,3 +3,6 @@ class FileRecord:
         self.file_path = file_path
         self.size = size
         self.crc = crc
+
+    def __str__(self):
+        return f"{self.file_path} - {self.crc} - {self.size} bytes"

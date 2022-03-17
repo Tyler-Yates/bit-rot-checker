@@ -13,7 +13,3 @@ def _read_secret_file() -> Dict[str, str]:
 
 def get_mongo_connection_string() -> str:
     return _read_secret_file()["mongo_connection_string"]
-
-
-def get_fernet_key() -> str:
-    return _read_secret_file()["fernet_key"]
