@@ -12,13 +12,15 @@ from bitrotchecker.src.file_record import FileRecord
 
 
 class MongoUtil:
-    def __init__(self):
+    def __init__(self, encryption: EncryptionUtil):
+        print("Connecting to Mongo database...")
         self.mongo_client = MongoClient(get_mongo_connection_string())
         self.files_db: Database = self.mongo_client.bitrot
         self.files_collection: Collection = self.files_db.files
         self.files_collection.create_index(FILE_ID_KEY, unique=True)
+        print("Successfully connected with Mongo")
 
-        self.encryption = EncryptionUtil(create_keyset_if_missing=True)
+        self.encryption = encryption
 
     def process_file_record(self, root_path: str, file_record: FileRecord) -> Optional[str]:
         full_path = os.path.join(root_path, file_record.file_path)

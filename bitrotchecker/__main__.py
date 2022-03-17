@@ -1,17 +1,21 @@
 import os
 
 from bitrotchecker.src.configuration_util import get_paths
+from bitrotchecker.src.encryption_util import EncryptionUtil
 from bitrotchecker.src.file_record import FileRecord
 from bitrotchecker.src.file_util import get_crc32
 from bitrotchecker.src.mongo_util import MongoUtil
 
 
 def main():
-    mongo_util = MongoUtil()
+    encryption = EncryptionUtil(create_keyset_if_missing=True)
+    mongo_util = MongoUtil(encryption)
 
     paths = get_paths()
     failed_files = []
+    total_successes = 0
     for path in paths:
+        num_success = 0
         num_failures = 0
         print("\n==========================================")
         print(f"Processing files in {path}...\n")
@@ -30,11 +34,15 @@ def main():
                     failed_files.append(f"{true_file_path} - {result}")
                 else:
                     print(f"PASS: {file_record}")
+                    num_success = num_success + 1
 
-        print(f"\nFailures in {path}: {num_failures}")
+        print(f"\nSuccesses in {path}: {num_success}")
+        print(f"Failures in {path}:  {num_failures}")
+        total_successes = total_successes + num_success
 
     print("\n===================================")
-    print(f"Total failures: {len(failed_files)}")
+    print(f"Total successes: {total_successes}")
+    print(f"Total failures:  {len(failed_files)}")
     for failed_file in failed_files:
         print(failed_file)
 
