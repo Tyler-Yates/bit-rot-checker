@@ -8,7 +8,7 @@ from pymongo.database import Database
 from bitrotchecker.src.constants import FILE_PATH_KEY, SIZE_KEY, CRC_KEY
 from bitrotchecker.src.encryption_util import EncryptionUtil
 from bitrotchecker.src.file_record import FileRecord
-from bitrotchecker.src.secret_util import get_mongo_connection_string
+from bitrotchecker.src.configuration_util import get_mongo_connection_string
 
 
 class MongoUtil:

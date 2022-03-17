@@ -1,7 +1,6 @@
 import os
-from typing import List
 
-from bitrotchecker.src.encryption_util import EncryptionUtil
+from bitrotchecker.src.configuration_util import get_paths
 from bitrotchecker.src.file_record import FileRecord
 from bitrotchecker.src.file_util import get_crc32
 from bitrotchecker.src.mongo_util import MongoUtil
@@ -10,7 +9,7 @@ from bitrotchecker.src.mongo_util import MongoUtil
 def main():
     mongo_util = MongoUtil()
 
-    paths = _get_paths()
+    paths = get_paths()
     failed_files = []
     for path in paths:
         num_failures = 0
@@ -40,29 +39,5 @@ def main():
         print(failed_file)
 
 
-def _get_paths() -> List[str]:
-    paths = []
-
-    with open("paths.txt", mode="r") as paths_files:
-        for line in paths_files.readlines():
-            if line.startswith("#") or (not line):
-                continue
-
-            paths.append(line.strip())
-
-    return paths
-
-
-def _test_encrypt(encryption_util: EncryptionUtil, input_data: str):
-    encrypted_data = encryption_util.encrypt_string("Test")
-    decrypted_data = encryption_util.decrypt_string(encrypted_data)
-    print(f"{input_data} - {encrypted_data} - {decrypted_data}")
-
-
 if __name__ == "__main__":
-    # encryption = EncryptionUtil()
-    # _test_encrypt(encryption, "Test")
-    # _test_encrypt(encryption, "Test")
-    # _test_encrypt(encryption, "Test")
-
     main()

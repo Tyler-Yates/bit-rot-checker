@@ -1,6 +1,5 @@
-secrets.json
+config.json
 venv/
-paths.txt
 .idea/
 __pycache__/
 *.pyc
