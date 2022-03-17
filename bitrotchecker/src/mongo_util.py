@@ -1,14 +1,14 @@
 import os.path
 from typing import Optional
 
-from pymongo import MongoClient, DESCENDING
+from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
-from bitrotchecker.src.constants import FILE_PATH_KEY, SIZE_KEY, CRC_KEY
+from bitrotchecker.src.configuration_util import get_mongo_connection_string
+from bitrotchecker.src.constants import FILE_PATH_KEY, SIZE_KEY, CRC_KEY, FILE_ID_KEY
 from bitrotchecker.src.encryption_util import EncryptionUtil
 from bitrotchecker.src.file_record import FileRecord
-from bitrotchecker.src.configuration_util import get_mongo_connection_string
 
 
 class MongoUtil:
@@ -16,18 +16,17 @@ class MongoUtil:
         self.mongo_client = MongoClient(get_mongo_connection_string())
         self.files_db: Database = self.mongo_client.bitrot
         self.files_collection: Collection = self.files_db.files
-        self.files_collection.create_index([(FILE_PATH_KEY, DESCENDING)], unique=True)
+        self.files_collection.create_index(FILE_ID_KEY, unique=True)
 
-        self.encryption = EncryptionUtil()
+        self.encryption = EncryptionUtil(create_keyset_if_missing=True)
 
     def process_file_record(self, root_path: str, file_record: FileRecord) -> Optional[str]:
-        encrypted_file_path = self.encryption.encrypt_string(file_record.file_path)
         full_path = os.path.join(root_path, file_record.file_path)
 
-        database_document = self.files_collection.find_one({FILE_PATH_KEY: encrypted_file_path})
+        database_document = self.files_collection.find_one({FILE_ID_KEY: file_record.file_id})
         if database_document:
             database_file_path = self.encryption.decrypt_string(database_document[FILE_PATH_KEY])
-            database_file_size = int(self.encryption.decrypt_string(database_document[SIZE_KEY]))
+            database_file_size = database_document[SIZE_KEY]
             database_file_crc = self.encryption.decrypt_string(database_document[CRC_KEY])
 
             if file_record.file_path != database_file_path:
@@ -49,7 +48,7 @@ class MongoUtil:
                 )
         else:
             self.files_collection.update_one(
-                filter={FILE_PATH_KEY: encrypted_file_path},
+                filter={FILE_ID_KEY: file_record.file_id},
                 update={"$set": (self.encryption.get_encrypted_file_record(file_record))},
                 upsert=True,
             )

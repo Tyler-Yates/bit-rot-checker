@@ -3,5 +3,5 @@ venv/
 .idea/
 __pycache__/
 *.pyc
-keyset.json
+key.txt
 .tox/

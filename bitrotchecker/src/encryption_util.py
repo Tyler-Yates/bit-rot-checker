@@ -1,62 +1,52 @@
-import base64
 import os.path
 from typing import Dict
 
-import tink
-from tink import cleartext_keyset_handle, daead, tink_config
+from cryptography.fernet import Fernet
 
-from bitrotchecker.src.constants import FILE_PATH_KEY, SIZE_KEY, CRC_KEY
+from bitrotchecker.src.constants import FILE_PATH_KEY, SIZE_KEY, CRC_KEY, FILE_ID_KEY
 from bitrotchecker.src.file_record import FileRecord
 
-DEFAULT_KEYSET_PATH = "keyset.json"
+DEFAULT_KEYSET_PATH = "key.txt"
 
 ENCRYPTION_TIME = 1000
 
 
 class EncryptionUtil:
     def __init__(self, keyset_path: str = None, create_keyset_if_missing: bool = False):
-        tink_config.register()
-
         if keyset_path:
             self.keyset_path = keyset_path
         else:
             self.keyset_path = DEFAULT_KEYSET_PATH
 
         if create_keyset_if_missing:
-            self.generate_keyset_if_missing()
+            self.generate_key_if_missing()
 
-        keyset_handle = self.read_keyset()
+        self.cipher = Fernet(self.read_key())
 
-        self.cipher = keyset_handle.primitive(daead.DeterministicAead)
-        self.associated_data = b""
-
-    def generate_keyset_if_missing(self):
+    def generate_key_if_missing(self):
         if os.path.exists(self.keyset_path):
             return
 
-        tink_config.register()
-        key_template = daead.deterministic_aead_key_templates.AES256_SIV
-        keyset_handle = tink.KeysetHandle.generate_new(key_template)
+        print("Creating new key...")
+        key = Fernet.generate_key()
         with open(self.keyset_path, "wt") as keyset_file:
-            cleartext_keyset_handle.write(tink.JsonKeysetWriter(keyset_file), keyset_handle)
+            keyset_file.write(key.decode())
 
-    def read_keyset(self):
+    def read_key(self) -> str:
+        print("Reading key...")
         with open(self.keyset_path, "rt") as keyset_file:
-            text = keyset_file.read()
-            keyset_handle = cleartext_keyset_handle.read(tink.JsonKeysetReader(text))
-            return keyset_handle
+            return keyset_file.read()
 
     def encrypt_string(self, input_string: str) -> str:
-        encoded_data = self.cipher.encrypt_deterministically(input_string.encode(), self.associated_data)
-        return base64.b64encode(encoded_data).decode()
+        return self.cipher.encrypt(input_string.encode()).decode()
 
     def decrypt_string(self, encrypted_string: str) -> str:
-        decrypted_data = self.cipher.decrypt_deterministically(base64.b64decode(encrypted_string), self.associated_data)
-        return decrypted_data.decode()
+        return self.cipher.decrypt(encrypted_string.encode()).decode()
 
     def get_encrypted_file_record(self, file_record: FileRecord) -> Dict:
         return {
+            FILE_ID_KEY: file_record.file_id,
             FILE_PATH_KEY: self.encrypt_string(file_record.file_path),
-            SIZE_KEY: self.encrypt_string(str(file_record.size)),
+            SIZE_KEY: file_record.size,
             CRC_KEY: self.encrypt_string(file_record.crc),
         }
