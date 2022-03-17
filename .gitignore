@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 key.txt
 .tox/
+.pytest_cache/
