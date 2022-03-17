@@ -3,7 +3,7 @@ import os
 from bitrotchecker.src.configuration_util import get_paths
 from bitrotchecker.src.encryption_util import EncryptionUtil
 from bitrotchecker.src.file_record import FileRecord
-from bitrotchecker.src.file_util import get_crc32
+from bitrotchecker.src.file_util import get_crc32, should_skip_folder
 from bitrotchecker.src.mongo_util import MongoUtil
 
 
@@ -21,6 +21,9 @@ def main():
         print(f"Processing files in {path}...\n")
         for root, dirs, files in os.walk(path):
             for file in files:
+                if should_skip_folder(root):
+                    continue
+
                 true_file_path = os.path.join(root, file)
                 saved_file_path = true_file_path.replace(path, "")
                 file_size = os.path.getsize(true_file_path)
