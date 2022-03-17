@@ -5,3 +5,4 @@ paths.txt
 __pycache__/
 *.pyc
 keyset.json
+.tox/

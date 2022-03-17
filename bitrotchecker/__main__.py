@@ -1,10 +1,10 @@
 import os
 from typing import List
 
-from bitrotchecker.encryption_util import EncryptionUtil
-from bitrotchecker.file_record import FileRecord
-from bitrotchecker.file_util import get_crc32
-from bitrotchecker.mongo_util import MongoUtil
+from bitrotchecker.src.encryption_util import EncryptionUtil
+from bitrotchecker.src.file_record import FileRecord
+from bitrotchecker.src.file_util import get_crc32
+from bitrotchecker.src.mongo_util import MongoUtil
 
 
 def main():
@@ -43,7 +43,7 @@ def main():
 def _get_paths() -> List[str]:
     paths = []
 
-    with open("paths.txt", mode='r') as paths_files:
+    with open("paths.txt", mode="r") as paths_files:
         for line in paths_files.readlines():
             if line.startswith("#") or (not line):
                 continue
@@ -59,7 +59,7 @@ def _test_encrypt(encryption_util: EncryptionUtil, input_data: str):
     print(f"{input_data} - {encrypted_data} - {decrypted_data}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     # encryption = EncryptionUtil()
     # _test_encrypt(encryption, "Test")
     # _test_encrypt(encryption, "Test")
