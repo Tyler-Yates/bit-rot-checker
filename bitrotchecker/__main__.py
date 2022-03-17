@@ -29,7 +29,7 @@ def main():
                 file_record = FileRecord(saved_file_path, file_size, file_crc)
                 passed, message = mongo_util.process_file_record(root, file_record)
                 if passed:
-                    print(f"PASS: {file_record}")
+                    print(f"PASS: {message} - {file_record}")
                     num_success = num_success + 1
                 else:
                     print(f"FAIL: {message} - {file_record}")
