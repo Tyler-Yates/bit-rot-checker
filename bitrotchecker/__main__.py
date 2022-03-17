@@ -27,14 +27,14 @@ def main():
                 file_crc = get_crc32(true_file_path)
 
                 file_record = FileRecord(saved_file_path, file_size, file_crc)
-                result = mongo_util.process_file_record(root, file_record)
-                if result:
-                    print(f"FAIL: {result} - {file_record}")
-                    num_failures = num_failures + 1
-                    failed_files.append(f"{true_file_path} - {result}")
-                else:
+                passed, message = mongo_util.process_file_record(root, file_record)
+                if passed:
                     print(f"PASS: {file_record}")
                     num_success = num_success + 1
+                else:
+                    print(f"FAIL: {message} - {file_record}")
+                    num_failures = num_failures + 1
+                    failed_files.append(f"{true_file_path} - {message}")
 
         print(f"\nSuccesses in {path}: {num_success}")
         print(f"Failures in {path}:  {num_failures}")
@@ -43,8 +43,10 @@ def main():
     print("\n===================================")
     print(f"Total successes: {total_successes}")
     print(f"Total failures:  {len(failed_files)}")
-    for failed_file in failed_files:
-        print(failed_file)
+    if len(failed_files) > 0:
+        print("\nFailed files:")
+        for failed_file in failed_files:
+            print(failed_file)
 
 
 if __name__ == "__main__":

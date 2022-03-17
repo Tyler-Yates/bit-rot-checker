@@ -1,5 +1,5 @@
 import os.path
-from typing import Optional
+from typing import Tuple
 
 from pymongo import MongoClient
 from pymongo.collection import Collection
@@ -12,17 +12,22 @@ from bitrotchecker.src.file_record import FileRecord
 
 
 class MongoUtil:
-    def __init__(self, encryption: EncryptionUtil):
-        print("Connecting to Mongo database...")
-        self.mongo_client = MongoClient(get_mongo_connection_string())
-        self.files_db: Database = self.mongo_client.bitrot
+    def __init__(self, encryption: EncryptionUtil, database: Database = None):
+        if database:
+            print("Using provided database object")
+            self.files_db: Database = database
+        else:
+            print("Connecting to Mongo database...")
+            mongo_client = MongoClient(get_mongo_connection_string())
+            self.files_db: Database = mongo_client.bitrot
+
         self.files_collection: Collection = self.files_db.files
         self.files_collection.create_index(FILE_ID_KEY, unique=True)
         print("Successfully connected with Mongo")
 
         self.encryption = encryption
 
-    def process_file_record(self, root_path: str, file_record: FileRecord) -> Optional[str]:
+    def process_file_record(self, root_path: str, file_record: FileRecord) -> Tuple[bool, str]:
         full_path = os.path.join(root_path, file_record.file_path)
 
         database_document = self.files_collection.find_one({FILE_ID_KEY: file_record.file_id})
@@ -39,14 +44,16 @@ class MongoUtil:
 
             if file_record.size != database_file_size:
                 return (
+                    False,
                     f"File {full_path} has a different size than expected. "
-                    f"Expected: {database_file_size}, Actual: {file_record.size}"
+                    f"Expected: {database_file_size}, Actual: {file_record.size}",
                 )
 
             if file_record.crc != database_file_crc:
                 return (
+                    False,
                     f"File {full_path} has a different CRC than expected. "
-                    f"Expected: {database_file_crc}, Actual: {file_record.crc}"
+                    f"Expected: {database_file_crc}, Actual: {file_record.crc}",
                 )
         else:
             self.files_collection.update_one(
@@ -54,6 +61,6 @@ class MongoUtil:
                 update={"$set": (self.encryption.get_encrypted_file_record(file_record))},
                 upsert=True,
             )
-            print(f"File record created: {file_record}")
+            return True, f"File {full_path} record created: {file_record}"
 
-        return None
+        return True, f"File {full_path} passed verification"
