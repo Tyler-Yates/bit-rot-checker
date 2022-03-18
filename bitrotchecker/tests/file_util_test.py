@@ -1,13 +1,10 @@
-import tempfile
+import io
 
-from bitrotchecker.src.file_util import get_checksum
+# noinspection PyProtectedMember
+from bitrotchecker.src.file_util import _get_checksum
 
 
 class TestFileUtil:
     def test_get_checksum(self):
-        with tempfile.NamedTemporaryFile() as temp_file:
-            temp_file.write("test1".encode())
-            temp_file.flush()
-
-            checksum = get_checksum(temp_file.name)
-            assert 2326977762 == checksum
+        checksum = _get_checksum(io.BytesIO(b"test1"))
+        assert 2326977762 == checksum

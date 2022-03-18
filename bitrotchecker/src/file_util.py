@@ -1,17 +1,21 @@
 import os.path
 import zlib
+from typing import IO
 
 CHUNK_SIZE = 4096
 
 SKIP_PREFIXES = [".st"]
 
 
-def get_checksum(file_path: str) -> int:
-    checksum = 0
-    with open(file_path, "rb") as f:
-        while chunk := f.read(CHUNK_SIZE):
-            checksum = zlib.crc32(chunk, checksum)
+def get_checksum_of_file(file_path: str) -> int:
+    with open(file_path, "rb") as file:
+        return _get_checksum(file)
 
+
+def _get_checksum(file: IO):
+    checksum = 0
+    while chunk := file.read(CHUNK_SIZE):
+        checksum = zlib.crc32(chunk, checksum)
     return checksum & 0xFFFFFFFF
 
 
