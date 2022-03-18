@@ -9,6 +9,9 @@ from bitrotchecker.src.mongo_util import MongoUtil
 def main():
     mongo_util = MongoUtil()
 
+    # To get data on the current database, uncomment next line
+    # mongo_util.get_size_of_documents()
+
     paths = get_paths()
     failed_files = []
     total_successes = 0

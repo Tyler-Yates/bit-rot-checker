@@ -1,6 +1,7 @@
 import os.path
 from typing import Tuple
 
+import bson
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
@@ -60,3 +61,26 @@ class MongoUtil:
             return True, f"File {full_path} record created: {file_record}"
 
         return True, f"File {full_path} passed verification"
+
+    def get_size_of_documents(self):
+        documents = self.files_collection.find()
+
+        smallest_size_bytes = 999999999999999999999999
+        largest_size_bytes = -1
+        total_size_bytes = 0
+        total_documents = 0
+        for document in documents:
+            size_bytes = len(bson.BSON.encode(document))
+
+            smallest_size_bytes = min(smallest_size_bytes, size_bytes)
+            largest_size_bytes = max(largest_size_bytes, size_bytes)
+            total_size_bytes += size_bytes
+            total_documents += 1
+
+        if total_documents == 0:
+            return
+
+        average_document_size_bytes = round(total_size_bytes / total_documents, 1)
+        print(f"Smallest document size: {smallest_size_bytes} bytes")
+        print(f"Largest document size: {largest_size_bytes} bytes")
+        print(f"Average document size: {average_document_size_bytes} bytes")
