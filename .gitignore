@@ -7,3 +7,4 @@ key.txt
 .tox/
 .pytest_cache/
 logs/
+recency.pickle
