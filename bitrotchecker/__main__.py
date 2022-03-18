@@ -20,6 +20,7 @@ def main():
     failed_files = []
     total_successes = 0
     total_skips = 0
+    os.makedirs("logs", exist_ok=True)
     with open(os.path.join("logs", "latest.txt"), mode="w") as latest_log_file:
         with open(os.path.join("logs", f"{datetime.now()}.txt"), mode="w") as log_file:
             for path in paths:
@@ -61,8 +62,6 @@ def main():
                 total_successes = total_successes + num_success
 
             print("\n===================================")
-            os.makedirs("logs", exist_ok=True)
-
             _print_and_write(f"Total successes: {total_successes}", latest_log_file, log_file)
             _print_and_write(f"Total failures:  {len(failed_files)}", latest_log_file, log_file)
             _print_and_write(f"Total skips:  {total_skips}", latest_log_file, log_file)
