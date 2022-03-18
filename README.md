@@ -11,13 +11,15 @@ This is the "source of truth" when it comes to bit rot.
 If this file deviates from this recorded data at any point in the future, it will be considered bit rot.
 For privacy, the file path is hashed using SHA-256.
 The CRC-32 and size of the file are also recorded.
+This is an intensive process as the entire file must be read.
+For very large files, this processing can take several minutes or even hours.
 
 If the program processes a file it has already seen before, it compares the data of the file on disk with what is found in the database.
 If there is a difference, the file fails its verification and is logged.
 You can find the logs for this program under the `logs` directory in the root of this project.
 
 In case of interruptions, a recency dictionary is saved on disk.
-Files that have been checked recently (timeframe is configurable) and passed verification will be skipped.
+Files that have passed verification recently (timeframe is configurable) will be skipped.
 
 ## Configuration
 You will need to create a `config.json` file in the root of this project.
