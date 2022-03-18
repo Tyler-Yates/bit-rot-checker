@@ -6,3 +6,4 @@ __pycache__/
 key.txt
 .tox/
 .pytest_cache/
+logs/

@@ -1,4 +1,6 @@
 import os
+from datetime import datetime
+from typing import IO
 
 from bitrotchecker.src.configuration_util import get_paths
 from bitrotchecker.src.file_record import FileRecord
@@ -46,12 +48,23 @@ def main():
         total_successes = total_successes + num_success
 
     print("\n===================================")
-    print(f"Total successes: {total_successes}")
-    print(f"Total failures:  {len(failed_files)}")
-    if len(failed_files) > 0:
-        print("\nFailed files:")
-        for failed_file in failed_files:
-            print(failed_file)
+    os.makedirs("logs", exist_ok=True)
+    with open(os.path.join("logs", "latest.txt"), mode="w") as latest_log_file:
+        with open(os.path.join("logs", f"{datetime.now()}.txt"), mode="w") as log_file:
+            _print_and_write(f"Total successes: {total_successes}", latest_log_file, log_file)
+            _print_and_write(f"Total failures:  {len(failed_files)}", latest_log_file, log_file)
+            if len(failed_files) > 0:
+                _print_and_write("\nFailed files:", latest_log_file, log_file)
+                for failed_file in failed_files:
+                    _print_and_write(failed_file, latest_log_file, log_file)
+
+
+def _print_and_write(message: str, latest_log_file: IO, log_file: IO):
+    print(message)
+    latest_log_file.write(message)
+    latest_log_file.write("\n")
+    log_file.write(message)
+    log_file.write("\n")
 
 
 if __name__ == "__main__":
