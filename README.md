@@ -1,6 +1,6 @@
 # Bit Rot Checker
 Files can "rot" over time on a hard drive.
-This project can be run periodically to validate that files are free from rot.
+This program can be run periodically to validate that files are free from rot.
 
 ## How It Works
 This program takes in a list of paths to check.
@@ -20,6 +20,11 @@ You can find the logs for this program under the `logs` directory in the root of
 
 In case of interruptions, a recency dictionary is saved on disk.
 Files that have passed verification recently (timeframe is configurable) will be skipped.
+
+## Prerequisites
+You will need a MongoDB database instance in order to use this program.
+You can create a [free MongoDB Atlas cluster](https://docs.atlas.mongodb.com/tutorial/deploy-free-tier-cluster/)
+(limited in size to 512MB) if you do not want to provision your own.
 
 ## Configuration
 You will need to create a `config.json` file in the root of this project.
