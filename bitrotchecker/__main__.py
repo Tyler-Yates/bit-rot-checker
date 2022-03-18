@@ -21,8 +21,9 @@ def main():
     total_successes = 0
     total_skips = 0
     os.makedirs("logs", exist_ok=True)
+    log_file_name = f"{datetime.now()}.txt".replace(":", "_")
     with open(os.path.join("logs", "latest.txt"), mode="w") as latest_log_file:
-        with open(os.path.join("logs", f"{datetime.now()}.txt"), mode="w") as log_file:
+        with open(os.path.join("logs", log_file_name), mode="w") as log_file:
             for path in paths:
                 num_success = 0
                 num_failures = 0
