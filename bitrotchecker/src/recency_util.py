@@ -3,8 +3,7 @@ import pickle
 from datetime import datetime
 from typing import Optional
 
-RECENCY_FILE_NAME = "recency.pickle"
-RECENCY_MINIMUM_AGE_DAYS = 90
+from bitrotchecker.src.constants import RECENCY_FILE_NAME, RECENCY_MINIMUM_AGE_DAYS
 
 
 class RecencyUtil:

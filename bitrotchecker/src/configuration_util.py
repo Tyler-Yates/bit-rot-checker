@@ -1,7 +1,7 @@
 import json
 from typing import Dict, List, Any
 
-CONFIG_FILE_NAME = "config.json"
+from bitrotchecker.src.constants import CONFIG_FILE_NAME
 
 
 def _read_config_file() -> Dict[str, Any]:

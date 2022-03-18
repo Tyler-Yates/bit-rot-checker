@@ -2,9 +2,7 @@ import os.path
 import zlib
 from typing import IO
 
-CHUNK_SIZE = 4096
-
-SKIP_PREFIXES = [".st"]
+from bitrotchecker.src.constants import CHUNK_SIZE, SKIP_PREFIXES
 
 
 def get_checksum_of_file(file_path: str) -> int:
