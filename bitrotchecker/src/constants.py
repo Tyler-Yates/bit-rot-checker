@@ -12,7 +12,8 @@ RECENCY_MINIMUM_AGE_DAYS = 90
 CONFIG_FILE_NAME = "config.json"
 
 # The chunk size for calculating the checksum.
-CHUNK_SIZE = 4096
+# This affects the performance when reading your disk.
+CHUNK_SIZE = 4096 * 1024
 
 # Prefix strings to skip when processing files.
 # Each prefix is evaluated for every part of the path.
