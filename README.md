@@ -29,7 +29,7 @@ cp config_example.json config.json
 Fill out your computer-specific information in the `config.json` file.
 This file should be ignored by git.
 
-To customize this program's behavior, edit the file `bitrotchecker/src/constants.py`.
+To further customize this program's behavior, edit the file `bitrotchecker/src/constants.py`.
 
 ## Running
 To run the program, you will first need to create and set up a virtual environment.
