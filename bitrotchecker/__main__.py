@@ -1,15 +1,13 @@
 import os
 
 from bitrotchecker.src.configuration_util import get_paths
-from bitrotchecker.src.encryption_util import EncryptionUtil
 from bitrotchecker.src.file_record import FileRecord
-from bitrotchecker.src.file_util import get_crc32, should_skip_file
+from bitrotchecker.src.file_util import get_checksum, should_skip_file
 from bitrotchecker.src.mongo_util import MongoUtil
 
 
 def main():
-    encryption = EncryptionUtil(create_keyset_if_missing=True)
-    mongo_util = MongoUtil(encryption)
+    mongo_util = MongoUtil()
 
     paths = get_paths()
     failed_files = []
@@ -28,7 +26,7 @@ def main():
 
                 saved_file_path = true_file_path.replace(path, "")
                 file_size = os.path.getsize(true_file_path)
-                file_crc = get_crc32(true_file_path)
+                file_crc = get_checksum(true_file_path)
 
                 file_record = FileRecord(saved_file_path, file_size, file_crc)
                 passed, message = mongo_util.process_file_record(root, file_record)

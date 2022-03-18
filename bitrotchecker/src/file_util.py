@@ -1,19 +1,18 @@
 import os.path
 import zlib
 
-CHUNK_SIZE = 1024 * 1024
+CHUNK_SIZE = 4096
 
 SKIP_PREFIXES = [".st"]
 
 
-def get_crc32(file_path: str) -> str:
-    """Compute the CRC-32 checksum of the contents of the given filename"""
+def get_checksum(file_path: str) -> int:
     checksum = 0
     with open(file_path, "rb") as f:
         while chunk := f.read(CHUNK_SIZE):
             checksum = zlib.crc32(chunk, checksum)
 
-    return "%X" % (checksum & 0xFFFFFFFF)
+    return checksum & 0xFFFFFFFF
 
 
 def should_skip_file(file_path: str) -> bool:
