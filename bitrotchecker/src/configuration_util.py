@@ -1,5 +1,5 @@
 import json
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 from bitrotchecker.src.constants import CONFIG_FILE_NAME
 
@@ -17,3 +17,7 @@ def get_mongo_connection_string() -> str:
 
 def get_paths() -> List[str]:
     return _read_config_file()["paths"]
+
+
+def get_healthcheck_url() -> Optional[str]:
+    return _read_config_file()["healthcheck_url"]

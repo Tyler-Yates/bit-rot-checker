@@ -3,5 +3,6 @@
   "paths": [
     "/home/user/dir1",
     "/home/user/dir2"
-  ]
+  ],
+  "healthcheck_url": "https://hc-ping.com/<some-id>"
 }

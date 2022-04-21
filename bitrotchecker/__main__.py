@@ -2,7 +2,9 @@ import os
 from datetime import datetime
 from typing import IO
 
-from bitrotchecker.src.configuration_util import get_paths
+import requests
+
+from bitrotchecker.src.configuration_util import get_paths, get_healthcheck_url
 from bitrotchecker.src.file_record import FileRecord
 from bitrotchecker.src.file_util import get_checksum_of_file, should_skip_file
 from bitrotchecker.src.mongo_util import MongoUtil
@@ -66,6 +68,23 @@ def main():
             _print_and_write(f"Total successes: {total_successes}", latest_log_file, log_file)
             _print_and_write(f"Total failures:  {len(failed_files)}", latest_log_file, log_file)
             _print_and_write(f"Total skips:  {total_skips}", latest_log_file, log_file)
+
+    # If we have a healthcheck URL, ping it if there were no errors
+    healthcheck_url = get_healthcheck_url()
+    if healthcheck_url is None:
+        print("No healthcheck URL. Skipping.")
+        return
+
+    total_failures = len(failed_files)
+    if total_failures > 0:
+        print(f"There were {total_failures} errors. Not sending healthcheck.")
+        return
+
+    try:
+        requests.get(healthcheck_url, timeout=10)
+        print(f"Pinged healthcheck {healthcheck_url}")
+    except requests.RequestException as e:
+        print(f"Ping failed: {e}")
 
 
 def _print_and_write(message: str, latest_log_file: IO, log_file: IO):
