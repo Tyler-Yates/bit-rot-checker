@@ -1,7 +1,7 @@
 import os
 import pickle
 from datetime import datetime
-from typing import Optional
+from typing import Optional, Tuple
 
 from bitrotchecker.src.constants import RECENCY_FILE_NAME, RECENCY_MINIMUM_AGE_DAYS
 
@@ -19,13 +19,21 @@ class RecencyUtil:
             pickle.dump(self.recency_dict, recency_file)
 
     def record_file_processed(self, true_file_path: str):
-        self.recency_dict[true_file_path] = datetime.now()
+        self.recency_dict[true_file_path] = (datetime.now(), os.path.getmtime(true_file_path))
         self._save_pickle()
 
     def file_processed_recently(self, true_file_path: str):
-        datetime_last_processed: Optional[datetime] = self.recency_dict.get(true_file_path, None)
-        if datetime_last_processed is None:
+        recency_tuple: Optional[Tuple[datetime, datetime]] = self.recency_dict.get(true_file_path, None)
+        if recency_tuple is None:
             return False
 
+        datetime_last_processed = recency_tuple[0]
+        last_modified_time = recency_tuple[1]
+
+        # If the file was modified since the last time we saw it, we need to check it again
+        if os.path.getmtime(true_file_path) != last_modified_time:
+            return False
+
+        # If the file is not modified, check if we should read it fully
         datetime_diff = datetime.now() - datetime_last_processed
         return datetime_diff.days < RECENCY_MINIMUM_AGE_DAYS

@@ -1,14 +1,25 @@
 import os.path
-from typing import Tuple
+from datetime import datetime, timezone
+from typing import Tuple, Dict, Optional
 
 import bson
+import pymongo
 from pymongo import MongoClient
 from pymongo.collection import Collection
 from pymongo.database import Database
 
 from bitrotchecker.src.configuration_util import get_mongo_connection_string
-from bitrotchecker.src.constants import SIZE_KEY, CHECKSUM_KEY, FILE_ID_KEY
+from bitrotchecker.src.constants import (
+    SIZE_KEY,
+    CHECKSUM_KEY,
+    FILE_ID_KEY,
+    LAST_ACCESSED_KEY,
+    MODIFIED_TIME_KEY,
+    MONGO_ID_KEY,
+    SECONDS_IN_A_YEAR,
+)
 from bitrotchecker.src.file_record import FileRecord
+from bitrotchecker.src.logger_util import LoggerUtil
 
 
 class MongoUtil:
@@ -22,21 +33,56 @@ class MongoUtil:
             self.files_db: Database = mongo_client.bitrot
 
         self.files_collection: Collection = self.files_db.files
-        self.files_collection.create_index(FILE_ID_KEY, unique=True)
+        self.files_collection.create_index(
+            [(FILE_ID_KEY, pymongo.ASCENDING), (MODIFIED_TIME_KEY, pymongo.ASCENDING)], unique=True
+        )
+        self.files_collection.create_index(LAST_ACCESSED_KEY, expireAfterSeconds=SECONDS_IN_A_YEAR)
         print("Successfully connected with Mongo")
 
-    def process_file_record(self, root_path: str, file_record: FileRecord) -> Tuple[bool, str]:
+    def _find_document(self, file_record: FileRecord, logger: LoggerUtil) -> Optional[Dict]:
+        database_document = self.files_collection.find_one(
+            {FILE_ID_KEY: file_record.file_id, MODIFIED_TIME_KEY: file_record.modified_time}
+        )
+
+        if database_document:
+            # If the document exists, update its last accessed time so that it is not cleaned up
+            self.files_collection.update_one(
+                filter={MONGO_ID_KEY: str(database_document[MONGO_ID_KEY])},
+                update={"$set": {LAST_ACCESSED_KEY: datetime.now()}},
+                upsert=False,
+            )
+            # We want to return the updated document, not the stale one we got earlier
+            return self.files_collection.find_one({MONGO_ID_KEY: database_document[MONGO_ID_KEY]})
+        else:
+            num_versions = self.files_collection.count_documents({FILE_ID_KEY: file_record.file_id})
+            if num_versions > 0:
+                logger.write(
+                    f"File has been seen before but has been modified: "
+                    f"{file_record.file_path} - {datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)}"
+                )
+
+            return database_document
+
+    def process_file_record(self, root_path: str, file_record: FileRecord, logger: LoggerUtil) -> Tuple[bool, str]:
         full_path = os.path.join(root_path, file_record.file_path)
 
-        database_document = self.files_collection.find_one({FILE_ID_KEY: file_record.file_id})
+        database_document = self._find_document(file_record, logger)
         if database_document:
+            # We have already seen this file before so check to see if there is bit rot
             database_file_id = database_document[FILE_ID_KEY]
+            database_file_mtime = database_document[MODIFIED_TIME_KEY]
             database_file_size = database_document[SIZE_KEY]
             database_file_crc = database_document[CHECKSUM_KEY]
 
             if file_record.file_id != database_file_id:
                 raise ValueError(
                     f"Fatal error! File ID mismatch: {file_record.file_id} expected but {database_file_id} found."
+                )
+
+            if file_record.modified_time != database_file_mtime:
+                raise ValueError(
+                    f"Fatal error! File mtime mismatch: {file_record.modified_time} expected "
+                    f"but {database_file_mtime} found."
                 )
 
             if file_record.size != database_file_size:
@@ -53,8 +99,12 @@ class MongoUtil:
                     f"Expected: {database_file_crc}, Actual: {file_record.checksum}",
                 )
         else:
+            # This file record is not in the database. Time to create a new document.
+            logger.write(f"Creating new file record: {file_record.file_path} - "
+                         f"{datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)} - "
+                         f"{file_record.file_id}")
             self.files_collection.update_one(
-                filter={FILE_ID_KEY: file_record.file_id},
+                filter={FILE_ID_KEY: file_record.file_id, MODIFIED_TIME_KEY: file_record.modified_time},
                 update={"$set": (file_record.get_mongo_document())},
                 upsert=True,
             )
