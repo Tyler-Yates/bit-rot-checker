@@ -26,6 +26,8 @@ class LoggerUtil:
 
         self.latest_log_file.write(message)
         self.latest_log_file.write("\n")
+        self.latest_log_file.flush()
 
         self.dated_log_file.write(message)
         self.dated_log_file.write("\n")
+        self.dated_log_file.flush()
