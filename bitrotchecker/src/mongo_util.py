@@ -100,9 +100,11 @@ class MongoUtil:
                 )
         else:
             # This file record is not in the database. Time to create a new document.
-            logger.write(f"Creating new file record: {file_record.file_path} - "
-                         f"{datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)} - "
-                         f"{file_record.file_id}")
+            logger.write(
+                f"Creating new file record: {file_record.file_path} - "
+                f"{datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)} - "
+                f"{file_record.file_id}"
+            )
             self.files_collection.update_one(
                 filter={FILE_ID_KEY: file_record.file_id, MODIFIED_TIME_KEY: file_record.modified_time},
                 update={"$set": (file_record.get_mongo_document())},
