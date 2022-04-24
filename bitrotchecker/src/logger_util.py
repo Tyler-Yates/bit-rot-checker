@@ -10,8 +10,8 @@ class LoggerUtil:
 
     def __enter__(self):
         log_file_name = f"{datetime.now()}.txt".replace(":", "_")
-        self.latest_log_file = open(os.path.join("logs", "latest.txt"), mode="w")
-        self.dated_log_file = open(os.path.join("logs", log_file_name), mode="w")
+        self.latest_log_file = open(os.path.join("logs", "latest.txt"), mode="w", encoding="utf-8")
+        self.dated_log_file = open(os.path.join("logs", log_file_name), mode="w", encoding="utf-8")
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
