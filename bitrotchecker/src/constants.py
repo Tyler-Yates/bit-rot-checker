@@ -21,6 +21,11 @@ CHUNK_SIZE = 4096 * 1024
 # For example [".st"] means that C:\Program Files\MyProgram\.stver\test.txt would be skipped
 SKIP_PREFIXES = [".st"]
 
+# Suffix strings to skip when processing files.
+# Each suffix is evaluated for every part of the path.
+# For example [".tmp"] means that C:\Program Files\MyProgram\.stver\test.txt.tmp would be skipped
+SKIP_SUFFIXES = [".tmp"]
+
 ########################
 # Mongo constants
 ########################
