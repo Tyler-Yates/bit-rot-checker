@@ -3,6 +3,8 @@ import pickle
 from datetime import datetime
 from typing import Optional, Tuple
 
+from atomicwrites import atomic_write
+
 from bitrotchecker.src.constants import RECENCY_FILE_NAME, RECENCY_MINIMUM_AGE_DAYS
 
 
@@ -15,8 +17,8 @@ class RecencyUtil:
                 self.recency_dict = pickle.load(recency_file)
 
     def _save_pickle(self):
-        with open(RECENCY_FILE_NAME, mode="wb") as recency_file:
-            pickle.dump(self.recency_dict, recency_file)
+        with atomic_write(RECENCY_FILE_NAME, mode="wb", overwrite=True) as recency_file:
+            recency_file.write(pickle.dumps(self.recency_dict, protocol=pickle.HIGHEST_PROTOCOL))
 
     def record_file_processed(self, true_file_path: str):
         self.recency_dict[true_file_path] = (datetime.now(), os.path.getmtime(true_file_path))
