@@ -39,7 +39,7 @@ class MongoUtil:
         self.files_collection.create_index(LAST_ACCESSED_KEY, expireAfterSeconds=SECONDS_IN_A_YEAR)
         print("Successfully connected with Mongo")
 
-    def _find_document(self, file_record: FileRecord, logger: LoggerUtil) -> Optional[Dict]:
+    def _find_document(self, file_record: FileRecord, logger: LoggerUtil, file_is_immutable: bool) -> Optional[Dict]:
         database_document = self.files_collection.find_one(
             {FILE_ID_KEY: file_record.file_id, MODIFIED_TIME_KEY: file_record.modified_time}
         )
@@ -54,19 +54,35 @@ class MongoUtil:
             # We want to return the updated document, not the stale one we got earlier
             return self.files_collection.find_one({MONGO_ID_KEY: database_document[MONGO_ID_KEY]})
         else:
-            num_versions = self.files_collection.count_documents({FILE_ID_KEY: file_record.file_id})
-            if num_versions > 0:
-                logger.write(
-                    f"File has been seen before but has been modified: "
-                    f"{file_record.file_path} - {datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)}"
-                )
+            file_record_with_different_mtime = self.files_collection.find_one({FILE_ID_KEY: file_record.file_id})
+            if file_record_with_different_mtime is None:
+                # We have never seen this file before.
+                return None
+            else:
+                # We have seen this file before, but the modified timestamp is different.
+                if file_is_immutable:
+                    # The file is immutable so we should fail the comparison
+                    logger.write(
+                        f"Immutable file has been modified: "
+                        f"{file_record.file_path} - "
+                        f"{datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)}"
+                    )
+                    return file_record_with_different_mtime
+                else:
+                    # The file is mutable so we should just create a new record.
+                    logger.write(
+                        f"File has been seen before but has been modified: "
+                        f"{file_record.file_path} - "
+                        f"{datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)}"
+                    )
+                    return None
 
-            return database_document
-
-    def process_file_record(self, root_path: str, file_record: FileRecord, logger: LoggerUtil) -> Tuple[bool, str]:
+    def process_file_record(
+        self, root_path: str, file_record: FileRecord, logger: LoggerUtil, file_is_immutable: bool
+    ) -> Tuple[bool, str]:
         full_path = os.path.join(root_path, file_record.file_path)
 
-        database_document = self._find_document(file_record, logger)
+        database_document = self._find_document(file_record, logger, file_is_immutable)
         if database_document:
             # We have already seen this file before so check to see if there is bit rot
             database_file_id = database_document[FILE_ID_KEY]
@@ -80,9 +96,9 @@ class MongoUtil:
                 )
 
             if file_record.modified_time != database_file_mtime:
-                raise ValueError(
-                    f"Fatal error! File mtime mismatch: {file_record.modified_time} expected "
-                    f"but {database_file_mtime} found."
+                return (
+                    False,
+                    f"File mtime mismatch: {file_record.modified_time} expected " f"but {database_file_mtime} found.",
                 )
 
             if file_record.size != database_file_size:
@@ -136,3 +152,6 @@ class MongoUtil:
         print(f"Smallest document size: {smallest_size_bytes} bytes")
         print(f"Largest document size: {largest_size_bytes} bytes")
         print(f"Average document size: {average_document_size_bytes} bytes")
+
+    def get_all_records_for_file_id(self, file_id: str):
+        return self.files_collection.find({FILE_ID_KEY: file_id})

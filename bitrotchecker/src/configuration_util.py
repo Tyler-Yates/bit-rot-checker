@@ -15,7 +15,11 @@ def get_mongo_connection_string() -> str:
     return _read_config_file()["mongo_connection_string"]
 
 
-def get_paths() -> List[str]:
+def get_immutable_paths() -> List[str]:
+    return _read_config_file()["immutable_paths"]
+
+
+def get_mutable_paths() -> List[str]:
     return _read_config_file()["paths"]
 
 

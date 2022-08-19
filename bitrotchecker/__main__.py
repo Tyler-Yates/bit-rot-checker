@@ -2,7 +2,7 @@ import os
 
 import requests
 
-from bitrotchecker.src.configuration_util import get_paths, get_healthcheck_url
+from bitrotchecker.src.configuration_util import get_healthcheck_url, get_mutable_paths, get_immutable_paths
 from bitrotchecker.src.file_processor import FileProcessor
 from bitrotchecker.src.logger_util import LoggerUtil
 from bitrotchecker.src.mongo_util import MongoUtil
@@ -16,14 +16,18 @@ def main():
     # To get data on the current database, uncomment next line
     # mongo_util.get_size_of_documents()
 
-    paths = get_paths()
+    immutable_paths = get_immutable_paths()
+    mutable_paths = get_mutable_paths()
+    all_paths = immutable_paths + mutable_paths
+
     total_successes = 0
     total_skips = 0
     os.makedirs("logs", exist_ok=True)
 
     with LoggerUtil() as logger:
         file_processor = FileProcessor(recency_util, mongo_util, logger)
-        for path in paths:
+        for path in all_paths:
+            is_immutable = path in immutable_paths
             num_skips = 0
             num_success = 0
             num_failures = 0
@@ -32,7 +36,9 @@ def main():
             for root, dirs, files in os.walk(path):
                 for file in files:
                     true_file_path = os.path.join(root, file)
-                    success = file_processor.process_file(root=root, path=path, true_file_path=true_file_path)
+                    success = file_processor.process_file(
+                        root=root, path=path, true_file_path=true_file_path, file_is_immutable=is_immutable
+                    )
                     if success is None:
                         num_skips += 1
                     elif success:

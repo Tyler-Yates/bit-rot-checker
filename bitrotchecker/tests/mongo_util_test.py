@@ -12,7 +12,7 @@ class TestMongoUtil:
     def _print(message: str):
         print(f"LOGGER: {message}")
 
-    def test_encrypt_string(self):
+    def test_mutable_file(self):
         database = mongomock.MongoClient().db
         mongo_util = MongoUtil(database=database)
 
@@ -20,16 +20,18 @@ class TestMongoUtil:
         logger.write = Mock()
         logger.write.side_effect = self._print
 
+        immutability_bool = False
+
         assert mongo_util.files_collection.count_documents({}) == 0
 
         file_record = FileRecord("file_path", 12345.6, 1000, 99999999)
-        passed, message = mongo_util.process_file_record("root", file_record, logger)
+        passed, message = mongo_util.process_file_record("root", file_record, logger, immutability_bool)
         print(message)
         assert passed is True
         assert mongo_util.files_collection.count_documents({}) == 1
 
         # The existing record should be checked and pass
-        passed, message = mongo_util.process_file_record("root", file_record, logger)
+        passed, message = mongo_util.process_file_record("root", file_record, logger, immutability_bool)
         print(message)
         assert passed is True
         assert mongo_util.files_collection.count_documents({}) == 1
@@ -38,7 +40,7 @@ class TestMongoUtil:
         file_record_different_size = FileRecord(
             file_record.file_path, file_record.modified_time, 2000, file_record.checksum
         )
-        passed, message = mongo_util.process_file_record("root", file_record_different_size, logger)
+        passed, message = mongo_util.process_file_record("root", file_record_different_size, logger, immutability_bool)
         print(message)
         assert passed is False
         assert "size" in message
@@ -48,7 +50,7 @@ class TestMongoUtil:
         file_record_different_size = FileRecord(
             file_record.file_path, file_record.modified_time, file_record.size, 22222222
         )
-        passed, message = mongo_util.process_file_record("root", file_record_different_size, logger)
+        passed, message = mongo_util.process_file_record("root", file_record_different_size, logger, immutability_bool)
         print(message)
         assert passed is False
         assert "CRC" in message
@@ -56,14 +58,75 @@ class TestMongoUtil:
 
         # A new file path should mean a new record in the database
         new_file_record = FileRecord("myFile", file_record.modified_time, 999, 11111111)
-        passed, message = mongo_util.process_file_record("root", new_file_record, logger)
+        passed, message = mongo_util.process_file_record("root", new_file_record, logger, immutability_bool)
         print(message)
         assert passed is True
         assert mongo_util.files_collection.count_documents({}) == 2
 
-        # A new modified time should mean a new record in the database
+        # A new modified time should mean a new record in the database since the file is mutable
         new_file_record = FileRecord(file_record.file_path, file_record.modified_time + 999999, 999, 11111111)
-        passed, message = mongo_util.process_file_record("root", new_file_record, logger)
+        passed, message = mongo_util.process_file_record("root", new_file_record, logger, immutability_bool)
         print(message)
         assert passed is True
         assert mongo_util.files_collection.count_documents({}) == 3
+
+    def test_immutable_file(self):
+        database = mongomock.MongoClient().db
+        mongo_util = MongoUtil(database=database)
+
+        logger: LoggerUtil = Mock()
+        logger.write = Mock()
+        logger.write.side_effect = self._print
+
+        assert mongo_util.files_collection.count_documents({}) == 0
+
+        immutability_bool = True
+
+        # Create the first file record
+        file_record = FileRecord("file_path", 12345.6, 1000, 99999999)
+        passed, message = mongo_util.process_file_record("root", file_record, logger, immutability_bool)
+        print(message)
+        assert passed is True
+        assert mongo_util.files_collection.count_documents({}) == 1
+
+        # The existing record should be checked and pass
+        passed, message = mongo_util.process_file_record("root", file_record, logger, immutability_bool)
+        print(message)
+        assert passed is True
+        assert mongo_util.files_collection.count_documents({}) == 1
+
+        # Changing the size of the file should lead to a failure
+        file_record_different_size = FileRecord(
+            file_record.file_path, file_record.modified_time, 2000, file_record.checksum
+        )
+        passed, message = mongo_util.process_file_record("root", file_record_different_size, logger, immutability_bool)
+        print(message)
+        assert passed is False
+        assert "size" in message
+        assert mongo_util.files_collection.count_documents({}) == 1
+
+        # Changing the CRC of the file should lead to a failure
+        file_record_different_size = FileRecord(
+            file_record.file_path, file_record.modified_time, file_record.size, 22222222
+        )
+        passed, message = mongo_util.process_file_record("root", file_record_different_size, logger, False)
+        print(message)
+        assert passed is False
+        assert "CRC" in message
+        assert mongo_util.files_collection.count_documents({}) == 1
+
+        # A new modified time should lead to a failure since the file is immutable
+        modified_time_record = FileRecord(
+            file_record.file_path, file_record.modified_time + 999999, file_record.size, file_record.checksum
+        )
+        passed, message = mongo_util.process_file_record("root", modified_time_record, logger, immutability_bool)
+        print(message)
+        assert passed is False
+        assert mongo_util.files_collection.count_documents({}) == 1
+
+        # A new file path should mean a new record in the database
+        new_file_record = FileRecord("myFile", file_record.modified_time, 999, 11111111)
+        passed, message = mongo_util.process_file_record("root", new_file_record, logger, immutability_bool)
+        print(message)
+        assert passed is True
+        assert mongo_util.files_collection.count_documents({}) == 2

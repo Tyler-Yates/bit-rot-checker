@@ -7,3 +7,4 @@ __pycache__/
 .pytest_cache/
 logs/
 recency.pickle
+/timestamp_fix_paths.txt

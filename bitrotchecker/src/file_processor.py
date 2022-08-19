@@ -19,7 +19,7 @@ class FileProcessor:
         self.num_failures = 0
         self.failed_files = []
 
-    def _process_file(self, root: str, path: str, true_file_path: str) -> Optional[bool]:
+    def _process_file(self, root: str, path: str, true_file_path: str, file_is_immutable: bool) -> Optional[bool]:
         if should_skip_file(true_file_path):
             self.total_skips += 1
             print(f"Skipping {true_file_path} as ignored")
@@ -36,7 +36,7 @@ class FileProcessor:
         file_crc = get_checksum_of_file(true_file_path)
 
         file_record = FileRecord(saved_file_path, file_modified_time, file_size, file_crc)
-        passed, message = self.mongo_util.process_file_record(root, file_record, self.logger)
+        passed, message = self.mongo_util.process_file_record(root, file_record, self.logger, file_is_immutable)
         if passed:
             print(f"PASS: {message} - {file_record}")
             # We only want to log successful files as processed
@@ -49,9 +49,9 @@ class FileProcessor:
             # Return the failures
             return False
 
-    def process_file(self, root: str, path: str, true_file_path: str) -> Optional[bool]:
+    def process_file(self, root: str, path: str, true_file_path: str, file_is_immutable: bool) -> Optional[bool]:
         try:
-            return self._process_file(root, path, true_file_path)
+            return self._process_file(root, path, true_file_path, file_is_immutable)
         except Exception as e:
             self.logger.write(f"EXCEPTION: {e}")
             return None

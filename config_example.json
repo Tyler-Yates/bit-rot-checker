@@ -4,5 +4,8 @@
     "/home/user/dir1",
     "/home/user/dir2"
   ],
+  "immutable_paths": [
+    "/home/user/dir3"
+  ],
   "healthcheck_url": "https://hc-ping.com/<some-id>"
 }
