@@ -11,5 +11,5 @@ def main():
                 recency_util._remove_recency_record(file_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

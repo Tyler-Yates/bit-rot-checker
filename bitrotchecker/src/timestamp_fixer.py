@@ -1,9 +1,11 @@
 import os
 import time
 from datetime import datetime
+from typing import Dict, Optional
 
-from bitrotchecker.src.constants import MODIFIED_TIME_KEY
+from bitrotchecker.src.constants import MODIFIED_TIME_KEY, CHECKSUM_KEY, SIZE_KEY
 from bitrotchecker.src.file_record import FileRecord
+from bitrotchecker.src.file_util import get_checksum_of_file
 from bitrotchecker.src.mongo_util import MongoUtil
 
 
@@ -18,16 +20,32 @@ def fix_file(real_file_path: str, database_file_path: str, utc_offset: float, mo
     print(f"Proposed correct Modified Time: {fixed_mtime}")
 
     file_records = mongo_util.get_all_records_for_file_id(file_id)
+    best_match_file_record: Optional[Dict] = None
     for file_record in file_records:
-        database_mtime = file_record[MODIFIED_TIME_KEY]
-        if int(database_mtime) == int(fixed_mtime):
-            print("Found match in database with fixed time. Correct timestamp of file on disk.")
-            # Use the database time to get back millisecond precision if present
-            os.utime(real_file_path, (database_mtime, database_mtime))
-            return
+        database_size = file_record[SIZE_KEY]
+        database_checksum = file_record[CHECKSUM_KEY]
 
-    # If we get to this point, there were no database records matching.
-    print("Could not find database entry to fix timestamp")
+        file_size = os.path.getsize(real_file_path)
+        file_checksum = get_checksum_of_file(real_file_path)
+
+        if database_size == file_size and database_checksum == file_checksum:
+            print(f"Found a match in database: {file_record}")
+            if best_match_file_record is None:
+                best_match_file_record = file_record
+            else:
+                print(
+                    "FAIL: Multiple database matches with the same size and checksum found. "
+                    "You will need to manually pick which one to use."
+                )
+                return
+
+    if best_match_file_record is None:
+        print("FAIL: Could not find database entry to fix timestamp.")
+    else:
+        # If we did find a match, update the file's modified timestamp
+        database_mtime = best_match_file_record[MODIFIED_TIME_KEY]
+        os.utime(real_file_path, (database_mtime, database_mtime))
+        print("PASS: Timestamp updated to match with database.")
 
 
 def fix_files_in_folder(folder: str, utc_offset: float, mongo_util: MongoUtil):
