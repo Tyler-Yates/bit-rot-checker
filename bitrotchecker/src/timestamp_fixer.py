@@ -9,15 +9,13 @@ from bitrotchecker.src.file_util import get_checksum_of_file
 from bitrotchecker.src.mongo_util import MongoUtil
 
 
-def fix_file(real_file_path: str, database_file_path: str, utc_offset: float, mongo_util: MongoUtil):
+def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil):
     file_id = FileRecord._calculate_file_id(database_file_path)
 
     current_mtime = os.path.getmtime(real_file_path)
     print()
     print(f"Processing {real_file_path} - {file_id}")
-    fixed_mtime = current_mtime + utc_offset
-    print(f"Current Modified Time         : {current_mtime}")
-    print(f"Proposed correct Modified Time: {fixed_mtime}")
+    print(f"Current Modified Time: {current_mtime}")
 
     file_records = mongo_util.get_all_records_for_file_id(file_id)
     best_match_file_record: Optional[Dict] = None
@@ -44,17 +42,18 @@ def fix_file(real_file_path: str, database_file_path: str, utc_offset: float, mo
     else:
         # If we did find a match, update the file's modified timestamp
         database_mtime = best_match_file_record[MODIFIED_TIME_KEY]
+        print(f"Setting modified time to: {database_mtime}")
         os.utime(real_file_path, (database_mtime, database_mtime))
         print("PASS: Timestamp updated to match with database.")
 
 
-def fix_files_in_folder(folder: str, utc_offset: float, mongo_util: MongoUtil):
+def fix_files_in_folder(folder: str, mongo_util: MongoUtil):
     for root, dirs, files in os.walk(folder, topdown=False):
         for file_name in files:
             real_file_path = os.path.join(root, file_name)
             database_file_path = real_file_path.replace(folder, "")
 
-            fix_file(real_file_path, database_file_path, utc_offset, mongo_util)
+            fix_file(real_file_path, database_file_path, mongo_util)
 
 
 def main():
@@ -68,7 +67,7 @@ def main():
         for line in input_file.readlines():
             input_folder = line.strip()
             print(f"Fixing modified timestamp for folder: {input_folder}")
-            fix_files_in_folder(input_folder, utc_offset, mongo_util)
+            fix_files_in_folder(input_folder, mongo_util)
 
 
 if __name__ == "__main__":
