@@ -7,7 +7,8 @@ def main():
     with open("files_to_remove_from_recency.txt", mode="r") as input_file:
         for line in input_file.readlines():
             file_path = line.strip()
-            recency_util._remove_recency_record(file_path)
+            if file_path:
+                recency_util._remove_recency_record(file_path)
 
 
 if __name__ == '__main__':
