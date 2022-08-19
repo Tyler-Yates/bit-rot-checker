@@ -13,6 +13,9 @@ def main():
     mongo_util = MongoUtil()
     recency_util = RecencyUtil()
 
+    # Clean recency util so it does not balloon forever
+    recency_util.clean_records()
+
     # To get data on the current database, uncomment next line
     # mongo_util.get_size_of_documents()
 
