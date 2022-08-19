@@ -25,13 +25,14 @@ class FileProcessor:
             print(f"Skipping {true_file_path} as ignored")
             return None
 
-        if self.recency_util.file_processed_recently(true_file_path):
+        file_modified_time = os.path.getmtime(true_file_path)
+
+        if self.recency_util.file_processed_recently(true_file_path, file_modified_time):
             self.total_skips += 1
             print(f"Skipping {true_file_path} as processed recently")
             return None
 
         saved_file_path = true_file_path.replace(path, "")
-        file_modified_time = os.path.getmtime(true_file_path)
         file_size = os.path.getsize(true_file_path)
         file_crc = get_checksum_of_file(true_file_path)
 
@@ -40,7 +41,7 @@ class FileProcessor:
         if passed:
             print(f"PASS: {message} - {file_record}")
             # We only want to log successful files as processed
-            self.recency_util.record_file_processed(true_file_path)
+            self.recency_util.record_file_processed(true_file_path, file_modified_time)
             # Return the success
             return True
         else:
