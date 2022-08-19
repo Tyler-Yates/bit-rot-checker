@@ -1,7 +1,7 @@
 import os
 import pickle
 from datetime import datetime
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict
 
 from atomicwrites import atomic_write
 
@@ -14,7 +14,7 @@ class RecencyUtil:
 
         if os.path.exists(RECENCY_FILE_NAME):
             with open(RECENCY_FILE_NAME, mode="rb") as recency_file:
-                self.recency_dict = pickle.load(recency_file)
+                self.recency_dict: Dict[str, Tuple] = pickle.load(recency_file)
 
     def _save_pickle(self):
         with atomic_write(RECENCY_FILE_NAME, mode="wb", overwrite=True) as recency_file:
@@ -39,3 +39,12 @@ class RecencyUtil:
         # If the file is not modified, check if we should read it fully
         datetime_diff = datetime.now() - datetime_last_processed
         return datetime_diff.days < RECENCY_MINIMUM_AGE_DAYS
+
+    def _remove_recency_record(self, true_file_path: str):
+        removed_record = self.recency_dict.pop(true_file_path, None)
+
+        if removed_record is None:
+            print(f"File path {true_file_path} was not in the recency dictionary")
+        else:
+            self._save_pickle()
+            print(f"Removed path {true_file_path} from the recency dictionary")
