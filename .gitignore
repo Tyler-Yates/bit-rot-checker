@@ -9,3 +9,4 @@ logs/
 recency.pickle
 /timestamp_fix_paths.txt
 /files_to_remove_from_recency.txt
+/config.backup.json
