@@ -69,8 +69,8 @@ class MongoUtil:
                     )
                     return file_record_with_different_mtime
                 else:
-                    # The file is mutable so we should just create a new record.
-                    logger.write(
+                    # The file is mutable, so we should just create a new record.
+                    print(
                         f"File has been seen before but has been modified: "
                         f"{file_record.file_path} - "
                         f"{datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)}"
@@ -116,7 +116,7 @@ class MongoUtil:
                 )
         else:
             # This file record is not in the database. Time to create a new document.
-            logger.write(
+            print(
                 f"Creating new file record: {file_record.file_path} - "
                 f"{datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)} - "
                 f"{file_record.file_id}"
