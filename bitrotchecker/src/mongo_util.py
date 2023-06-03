@@ -46,11 +46,18 @@ class MongoUtil:
 
         if database_document:
             # If the document exists, update its last accessed time so that it is not cleaned up
-            self.files_collection.update_one(
-                filter={MONGO_ID_KEY: str(database_document[MONGO_ID_KEY])},
-                update={"$set": {LAST_ACCESSED_KEY: datetime.now()}},
+            current_datetime = datetime.now()
+            update_result = self.files_collection.update_one(
+                filter={MONGO_ID_KEY: database_document[MONGO_ID_KEY]},
+                update={"$set": {LAST_ACCESSED_KEY: current_datetime}},
                 upsert=False,
             )
+
+            # Don't look at modified_count as MongoDB may choose to not update the document
+            # if the timestamps are too close together.
+            if update_result.matched_count != 1:
+                raise ValueError(f"Could not update last accessed time for {file_record.file_id}")
+
             # We want to return the updated document, not the stale one we got earlier
             return self.files_collection.find_one({MONGO_ID_KEY: database_document[MONGO_ID_KEY]})
         else:
