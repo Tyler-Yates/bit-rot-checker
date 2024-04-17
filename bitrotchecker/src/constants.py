@@ -9,6 +9,9 @@ RECENCY_FILE_NAME = "recency.pickle"
 # Lower this to scan files more frequently.
 RECENCY_MINIMUM_AGE_DAYS = 90
 
+# Ignore files created less than X seconds ago
+IGNORE_FILES_NEWER_THAN_SECONDS = 60 * 60 * 4  # Hours in seconds
+
 # The file on disk to load configuration from.
 CONFIG_FILE_NAME = "config.json"
 

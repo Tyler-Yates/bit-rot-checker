@@ -1,3 +1,5 @@
+import time
+from unittest import mock
 from unittest.mock import Mock
 
 import mongomock
@@ -80,7 +82,15 @@ class TestMongoUtil:
 
         assert mongo_util.files_collection.count_documents({}) == 0
 
+        with mock.patch("os.path.getctime") as mock_getctime:
+            self._test_immutable_file(mongo_util, logger, mock_getctime)
+
+    @staticmethod
+    def _test_immutable_file(mongo_util: MongoUtil, logger: LoggerUtil, mock_getctime):
         immutability_bool = True
+
+        # Mock to say that every file was created a long time ago to bypass the recency check
+        mock_getctime.return_value = 1
 
         # Create the first file record
         file_record = FileRecord("file_path", 12345.6, 1000, 99999999)
@@ -128,5 +138,15 @@ class TestMongoUtil:
         new_file_record = FileRecord("myFile", file_record.modified_time, 999, 11111111)
         passed, message = mongo_util.process_file_record("root", new_file_record, logger, immutability_bool)
         print(message)
+        assert passed is True
+        assert mongo_util.files_collection.count_documents({}) == 2
+
+        # Now change the mock to say that the file was created right now
+        mock_getctime.return_value = time.time()
+        new_file_record = FileRecord("newImmutableFile", file_record.modified_time, 999, 11111111)
+        passed, message = mongo_util.process_file_record("root", new_file_record, logger, immutability_bool)
+        print(message)
+        # The file should still "pass" verification but no new file record should be added to the database
+        # because it should be skipped for being too recently created.
         assert passed is True
         assert mongo_util.files_collection.count_documents({}) == 2

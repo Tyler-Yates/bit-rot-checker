@@ -16,7 +16,7 @@ from bitrotchecker.src.constants import (
     LAST_ACCESSED_KEY,
     MODIFIED_TIME_KEY,
     MONGO_ID_KEY,
-    SECONDS_IN_A_YEAR,
+    SECONDS_IN_A_YEAR, IGNORE_FILES_NEWER_THAN_SECONDS,
 )
 from bitrotchecker.src.file_record import FileRecord
 from bitrotchecker.src.logger_util import LoggerUtil
@@ -124,6 +124,20 @@ class MongoUtil:
                     f"Database={database_file_crc!r} but Local File={file_record.checksum!r}",
                 )
         else:
+            # We need to be confident that a new immutable file is completely done being modified.
+            # Newly created files are riskier to make this assumption since they may still be being written to.
+            # For example, creating par2 files may take quite a long time, and we don't want to save its
+            # initial checksum into the database only for it to change as the creation process completes.
+            if file_is_immutable:
+                file_creation_time_seconds = os.path.getctime(full_path)
+                file_creation_datetime = datetime.fromtimestamp(file_creation_time_seconds)
+                now = datetime.now()
+                seconds_since_file_created = (now - file_creation_datetime).seconds
+                if seconds_since_file_created <= IGNORE_FILES_NEWER_THAN_SECONDS:
+                    print(f"Ignoring new immutable file {full_path} since it was created only"
+                          f" {seconds_since_file_created} seconds ago.")
+                    return True, f"Immutable file {full_path} skipped because it was created too recently"
+
             # This file record is not in the database. Time to create a new document.
             print(
                 f"Creating new file record: {file_record.file_path} - "
