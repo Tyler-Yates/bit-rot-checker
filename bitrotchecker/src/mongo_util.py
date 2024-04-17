@@ -99,27 +99,29 @@ class MongoUtil:
 
             if file_record.file_id != database_file_id:
                 raise ValueError(
-                    f"Fatal error! File ID mismatch: {file_record.file_id} expected but {database_file_id} found."
+                    f"Fatal error! File ID mismatch: Local File={file_record.file_id!r}"
+                    f" but Database={database_file_id!r}."
                 )
 
             if file_record.modified_time != database_file_mtime:
                 return (
                     False,
-                    f"File mtime mismatch: {file_record.modified_time} expected " f"but {database_file_mtime} found.",
+                    f"File mtime mismatch: Local File={file_record.modified_time!r}"
+                    f" but Database={database_file_mtime!r}.",
                 )
 
             if file_record.size != database_file_size:
                 return (
                     False,
                     f"File {full_path} has a different size than expected. "
-                    f"Expected: {database_file_size}, Actual: {file_record.size}",
+                    f"Database={database_file_size!r} but Local File={file_record.size!r}",
                 )
 
             if file_record.checksum != database_file_crc:
                 return (
                     False,
                     f"File {full_path} has a different CRC than expected. "
-                    f"Expected: {database_file_crc}, Actual: {file_record.checksum}",
+                    f"Database={database_file_crc!r} but Local File={file_record.checksum!r}",
                 )
         else:
             # This file record is not in the database. Time to create a new document.
