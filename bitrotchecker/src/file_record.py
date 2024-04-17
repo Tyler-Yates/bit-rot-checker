@@ -12,10 +12,10 @@ class FileRecord:
         self.size = size
         self.checksum = checksum
 
-        self.file_id = self._calculate_file_id(self.file_path)
+        self.file_id = self.calculate_file_id(self.file_path)
 
     @staticmethod
-    def _calculate_file_id(file_path: str):
+    def calculate_file_id(file_path: str):
         hasher = hashlib.sha256()
         hasher.update(file_path.encode())
         return hasher.hexdigest().lower()
