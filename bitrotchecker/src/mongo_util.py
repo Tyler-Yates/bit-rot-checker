@@ -1,6 +1,6 @@
 import os.path
 from datetime import datetime, timezone
-from typing import Dict, Optional
+from typing import Any, Mapping
 
 import bson
 import pymongo
@@ -42,7 +42,9 @@ class MongoUtil:
         self.files_collection.create_index(LAST_ACCESSED_KEY, expireAfterSeconds=SECONDS_IN_A_YEAR)
         print("Successfully connected with Mongo")
 
-    def _find_document(self, file_record: FileRecord, logger: LoggerUtil, file_is_immutable: bool) -> Optional[Dict]:
+    def _find_document(
+        self, file_record: FileRecord, logger: LoggerUtil, file_is_immutable: bool
+    ) -> Mapping[str, Any] | None:
         database_document = self.files_collection.find_one(
             {FILE_ID_KEY: file_record.file_id, MODIFIED_TIME_KEY: file_record.modified_time}
         )
