@@ -1,6 +1,6 @@
 import os.path
 from datetime import datetime, timezone
-from typing import Tuple, Dict, Optional
+from typing import Dict, Optional
 
 import bson
 import pymongo
@@ -16,9 +16,12 @@ from bitrotchecker.src.constants import (
     LAST_ACCESSED_KEY,
     MODIFIED_TIME_KEY,
     MONGO_ID_KEY,
-    SECONDS_IN_A_YEAR, IGNORE_FILES_NEWER_THAN_SECONDS,
+    SECONDS_IN_A_YEAR,
+    IGNORE_FILES_NEWER_THAN_SECONDS,
 )
 from bitrotchecker.src.file_record import FileRecord
+from bitrotchecker.src.file_result import FileResult
+from bitrotchecker.src.file_result_enum import FileResultStatus
 from bitrotchecker.src.logger_util import LoggerUtil
 
 
@@ -85,13 +88,11 @@ class MongoUtil:
                     return None
 
     def process_file_record(
-        self, root_path: str, file_record: FileRecord, logger: LoggerUtil, file_is_immutable: bool
-    ) -> Tuple[bool, str]:
-        full_path = os.path.join(root_path, file_record.file_path)
-
+        self, true_file_path: str, file_record: FileRecord, logger: LoggerUtil, file_is_immutable: bool
+    ) -> FileResult:
         database_document = self._find_document(file_record, logger, file_is_immutable)
         if database_document:
-            # We have already seen this file before so check to see if there is bit rot
+            # We have already seen this file before so check to see if there is bit-rot
             database_file_id = database_document[FILE_ID_KEY]
             database_file_mtime = database_document[MODIFIED_TIME_KEY]
             database_file_size = database_document[SIZE_KEY]
@@ -104,23 +105,23 @@ class MongoUtil:
                 )
 
             if file_record.modified_time != database_file_mtime:
-                return (
-                    False,
+                return FileResult(
+                    FileResultStatus.FAIL,
                     f"File mtime mismatch: Local File={file_record.modified_time!r}"
                     f" but Database={database_file_mtime!r}.",
                 )
 
             if file_record.size != database_file_size:
-                return (
-                    False,
-                    f"File {full_path} has a different size than expected. "
+                return FileResult(
+                    FileResultStatus.FAIL,
+                    f"File {true_file_path} has a different size than expected. "
                     f"Database={database_file_size!r} but Local File={file_record.size!r}",
                 )
 
             if file_record.checksum != database_file_crc:
-                return (
-                    False,
-                    f"File {full_path} has a different CRC than expected. "
+                return FileResult(
+                    FileResultStatus.FAIL,
+                    f"File {true_file_path} has a different CRC than expected. "
                     f"Database={database_file_crc!r} but Local File={file_record.checksum!r}",
                 )
         else:
@@ -129,29 +130,26 @@ class MongoUtil:
             # For example, creating par2 files may take quite a long time, and we don't want to save its
             # initial checksum into the database only for it to change as the creation process completes.
             if file_is_immutable:
-                file_creation_time_seconds = os.path.getctime(full_path)
+                file_creation_time_seconds = os.path.getctime(true_file_path)
                 file_creation_datetime = datetime.fromtimestamp(file_creation_time_seconds)
                 now = datetime.now()
-                seconds_since_file_created = (now - file_creation_datetime).seconds
+                seconds_since_file_created = (now - file_creation_datetime).total_seconds()
                 if seconds_since_file_created <= IGNORE_FILES_NEWER_THAN_SECONDS:
-                    print(f"Ignoring new immutable file {full_path} since it was created only"
-                          f" {seconds_since_file_created} seconds ago.")
-                    return True, f"Immutable file {full_path} skipped because it was created too recently"
+                    return FileResult(
+                        FileResultStatus.SKIP,
+                        f"Immutable file {true_file_path} skipped because it was created"
+                        f" only {seconds_since_file_created} seconds ago",
+                    )
 
             # This file record is not in the database. Time to create a new document.
-            print(
-                f"Creating new file record: {file_record.file_path} - "
-                f"{datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)} - "
-                f"{file_record.file_id}"
-            )
             self.files_collection.update_one(
                 filter={FILE_ID_KEY: file_record.file_id, MODIFIED_TIME_KEY: file_record.modified_time},
                 update={"$set": (file_record.get_mongo_document())},
                 upsert=True,
             )
-            return True, f"File {full_path} record created: {file_record}"
+            return FileResult(FileResultStatus.PASS, f"New file {true_file_path} record created: {file_record}")
 
-        return True, f"File {full_path} passed verification"
+        return FileResult(FileResultStatus.PASS, f"File {true_file_path} passed verification")
 
     def get_size_of_documents(self):
         documents = self.files_collection.find()

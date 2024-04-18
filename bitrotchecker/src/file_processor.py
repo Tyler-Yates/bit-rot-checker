@@ -37,18 +37,21 @@ class FileProcessor:
         file_crc = get_checksum_of_file(true_file_path)
 
         file_record = FileRecord(saved_file_path, file_modified_time, file_size, file_crc)
-        passed, message = self.mongo_util.process_file_record(root, file_record, self.logger, file_is_immutable)
-        if passed:
-            print(f"PASS: {message} - {file_record}")
+        file_result = self.mongo_util.process_file_record(root, file_record, self.logger, file_is_immutable)
+        if file_result.value.PASS:
+            print(f"PASS: {file_result.message} - {file_record}")
             # We only want to log successful files as processed
             self.recency_util.record_file_processed(true_file_path, file_modified_time)
             # Return the success
             return True
-        else:
-            self.logger.write(f"FAIL: {message} - {file_record}")
-            self.failed_files.append(f"{true_file_path} - {message}")
+        elif file_result.value.FAIL:
+            self.logger.write(f"FAIL: {file_result.message} - {file_record}")
+            self.failed_files.append(f"{true_file_path} - {file_result.message}")
             # Return the failures
             return False
+        elif file_result.value.SKIP:
+            print(f"SKIP: {file_result.message} - {file_record}")
+            return None
 
     def process_file(self, root: str, path: str, true_file_path: str, file_is_immutable: bool) -> Optional[bool]:
         try:
