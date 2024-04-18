@@ -37,7 +37,7 @@ class FileProcessor:
         file_crc = get_checksum_of_file(true_file_path)
 
         file_record = FileRecord(saved_file_path, file_modified_time, file_size, file_crc)
-        file_result = self.mongo_util.process_file_record(root, file_record, self.logger, file_is_immutable)
+        file_result = self.mongo_util.process_file_record(true_file_path, file_record, self.logger, file_is_immutable)
         if file_result.value.PASS:
             print(f"PASS: {file_result.message} - {file_record}")
             # We only want to log successful files as processed
