@@ -21,7 +21,7 @@ from bitrotchecker.src.constants import (
 )
 from bitrotchecker.src.file_record import FileRecord
 from bitrotchecker.src.file_result import FileResult
-from bitrotchecker.src.file_result_enum import FileResultStatus
+from bitrotchecker.src.file_result_enum import FileResultValue
 from bitrotchecker.src.logger_util import LoggerUtil
 
 
@@ -108,21 +108,21 @@ class MongoUtil:
 
             if file_record.modified_time != database_file_mtime:
                 return FileResult(
-                    FileResultStatus.FAIL,
+                    FileResultValue.FAIL,
                     f"File mtime mismatch: Local File={file_record.modified_time!r}"
                     f" but Database={database_file_mtime!r}.",
                 )
 
             if file_record.size != database_file_size:
                 return FileResult(
-                    FileResultStatus.FAIL,
+                    FileResultValue.FAIL,
                     f"File {true_file_path} has a different size than expected. "
                     f"Database={database_file_size!r} but Local File={file_record.size!r}",
                 )
 
             if file_record.checksum != database_file_crc:
                 return FileResult(
-                    FileResultStatus.FAIL,
+                    FileResultValue.FAIL,
                     f"File {true_file_path} has a different CRC than expected. "
                     f"Database={database_file_crc!r} but Local File={file_record.checksum!r}",
                 )
@@ -138,7 +138,7 @@ class MongoUtil:
                 seconds_since_file_created = (now - file_creation_datetime).total_seconds()
                 if seconds_since_file_created <= IGNORE_FILES_NEWER_THAN_SECONDS:
                     return FileResult(
-                        FileResultStatus.SKIP,
+                        FileResultValue.SKIP,
                         f"Immutable file {true_file_path} skipped because it was created"
                         f" only {seconds_since_file_created} seconds ago",
                     )
@@ -149,9 +149,9 @@ class MongoUtil:
                 update={"$set": (file_record.get_mongo_document())},
                 upsert=True,
             )
-            return FileResult(FileResultStatus.PASS, f"New file {true_file_path} record created: {file_record}")
+            return FileResult(FileResultValue.PASS, f"New file {true_file_path} record created: {file_record}")
 
-        return FileResult(FileResultStatus.PASS, f"File {true_file_path} passed verification")
+        return FileResult(FileResultValue.PASS, f"File {true_file_path} passed verification")
 
     def get_size_of_documents(self):
         documents = self.files_collection.find()

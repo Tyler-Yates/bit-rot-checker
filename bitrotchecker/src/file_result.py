@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 
-from bitrotchecker.src.file_result_enum import FileResultStatus
+from bitrotchecker.src.file_result_enum import FileResultValue
 
 
 @dataclass
 class FileResult:
-    value: FileResultStatus
+    value: FileResultValue
     message: str

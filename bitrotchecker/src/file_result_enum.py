@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class FileResultStatus(Enum):
+class FileResultValue(Enum):
     # FAIL means the file is suspected to have bit-rot.
     FAIL = 1
 
