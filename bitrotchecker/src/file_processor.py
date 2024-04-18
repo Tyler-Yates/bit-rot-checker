@@ -2,6 +2,7 @@ import os
 from typing import Optional
 
 from bitrotchecker.src.file_record import FileRecord
+from bitrotchecker.src.file_result_enum import FileResultValue
 from bitrotchecker.src.file_util import should_skip_file, get_checksum_of_file
 from bitrotchecker.src.logger_util import LoggerUtil
 from bitrotchecker.src.mongo_util import MongoUtil
@@ -38,18 +39,18 @@ class FileProcessor:
 
         file_record = FileRecord(saved_file_path, file_modified_time, file_size, file_crc)
         file_result = self.mongo_util.process_file_record(true_file_path, file_record, self.logger, file_is_immutable)
-        if file_result.value.PASS:
+        if file_result.value is FileResultValue.PASS:
             print(f"PASS: {file_result.message} - {file_record}")
             # We only want to log successful files as processed
             self.recency_util.record_file_processed(true_file_path, file_modified_time)
             # Return the success
             return True
-        elif file_result.value.FAIL:
+        elif file_result.value is file_result.value.FAIL:
             self.logger.write(f"FAIL: {file_result.message} - {file_record}")
             self.failed_files.append(f"{true_file_path} - {file_result.message}")
             # Return the failures
             return False
-        elif file_result.value.SKIP:
+        elif file_result.value is file_result.value.SKIP:
             print(f"SKIP: {file_result.message} - {file_record}")
             return None
 
