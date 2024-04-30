@@ -12,10 +12,14 @@ from bitrotchecker.src.mongo_util import MongoUtil
 def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil, verify_checksum: bool):
     file_id = FileRecord.calculate_file_id(database_file_path)
 
-    current_mtime = os.path.getmtime(real_file_path)
+    file_mtime = os.path.getmtime(real_file_path)
+    file_size = os.path.getsize(real_file_path)
+    # Calculating checksum is expensive, so only do it if necessary
+    file_checksum = get_checksum_of_file(real_file_path) if verify_checksum else None
+
     print()
     print(f"Processing {real_file_path} - {file_id}")
-    print(f"Current Modified Time: {current_mtime}")
+    print(f"Current Modified Time: {file_mtime}")
 
     file_records = mongo_util.get_all_records_for_file_id(file_id)
     best_match_file_record: Optional[Dict] = None
@@ -23,11 +27,7 @@ def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil
         database_size = file_record[SIZE_KEY]
         database_checksum = file_record[CHECKSUM_KEY]
 
-        file_size = os.path.getsize(real_file_path)
-        # Calculating checksum is expensive, so only do it if necessary
-        file_checksum = get_checksum_of_file(real_file_path) if verify_checksum else database_checksum
-
-        if database_size == file_size and database_checksum == file_checksum:
+        if database_size == file_size and (file_checksum is None or database_checksum == file_checksum):
             print(f"Found a match in database: {file_record}")
             if best_match_file_record is None:
                 best_match_file_record = file_record
@@ -41,8 +41,12 @@ def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil
     if best_match_file_record is None:
         print("FAIL: Could not find database entry to fix timestamp.")
     else:
-        # If we did find a match, update the file's modified timestamp
         database_mtime = best_match_file_record[MODIFIED_TIME_KEY]
+
+        if database_mtime == file_mtime:
+            print("SKIP: File mtime already matches database")
+            return
+
         mtime_nanos = _get_nanos_from_mtime(database_mtime)
         print(f"Setting modified time to: {mtime_nanos} nanos")
         os.utime(real_file_path, ns=(mtime_nanos, mtime_nanos))
