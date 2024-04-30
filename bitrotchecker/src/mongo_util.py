@@ -74,7 +74,7 @@ class MongoUtil:
                 # We have seen this file before, but the modified timestamp is different.
                 if file_is_immutable:
                     # The file is immutable so we should fail the comparison
-                    logger.write(
+                    print(
                         f"Immutable file has been modified: "
                         f"{file_record.file_path} - "
                         f"{datetime.fromtimestamp(file_record.modified_time, tz=timezone.utc)}"
@@ -109,7 +109,7 @@ class MongoUtil:
             if file_record.modified_time != database_file_mtime:
                 return FileResult(
                     FileResultValue.FAIL,
-                    f"File mtime mismatch: Local File={file_record.modified_time!r}"
+                    f"File {true_file_path} mtime mismatch: Local File={file_record.modified_time!r}"
                     f" but Database={database_file_mtime!r}.",
                 )
 
