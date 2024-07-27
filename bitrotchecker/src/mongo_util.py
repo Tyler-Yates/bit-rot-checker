@@ -178,3 +178,7 @@ class MongoUtil:
 
     def get_all_records_for_file_id(self, file_id: str):
         return self.files_collection.find({FILE_ID_KEY: file_id})
+
+    def remove_records_with_file_id(self, file_id: str) -> int:
+        result = self.files_collection.delete_many(filter={"file_id": file_id})
+        return result.deleted_count
