@@ -8,7 +8,7 @@ def main():
             line = line.strip()
             ids_to_remove.add(line)
 
-    answer = input(f"This will delete {len(ids_to_remove)} file IDs from the database. Proceed?")
+    answer = input(f"This will delete {len(ids_to_remove)} file IDs from the database. Proceed? ")
     if answer.lower() not in ["y", "yes"]:
         exit(1)
 

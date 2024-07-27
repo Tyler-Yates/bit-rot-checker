@@ -33,7 +33,7 @@ class FileRecord:
 
     def __str__(self):
         return (
-            f"{self.file_id} - {self.file_path} -"
+            f"id={self.file_id} - {self.file_path} -"
             f" Modified '{datetime.fromtimestamp(self.modified_time, tz=timezone.utc)}' -"
             f" CRC {self.checksum} - {self.size} bytes"
         )
