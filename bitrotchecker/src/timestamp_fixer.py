@@ -23,20 +23,29 @@ def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil
 
     file_records = mongo_util.get_all_records_for_file_id(file_id)
     best_match_file_record: Optional[Dict] = None
+    num_id_matches = 0
     for file_record in file_records:
+        num_id_matches += 1
         database_size = file_record[SIZE_KEY]
         database_checksum = file_record[CHECKSUM_KEY]
 
-        if database_size == file_size and (file_checksum is None or database_checksum == file_checksum):
-            print(f"Found a match in database: {file_record}")
-            if best_match_file_record is None:
-                best_match_file_record = file_record
+        if database_size == file_size:
+            if file_checksum is None or database_checksum == file_checksum:
+                print(f"Found a match in database: {file_record}")
+                if best_match_file_record is None:
+                    best_match_file_record = file_record
+                else:
+                    print(
+                        "FAIL: Multiple database matches with the same size and checksum found. "
+                        "You will need to manually pick which one to use."
+                    )
+                    return
             else:
-                print(
-                    "FAIL: Multiple database matches with the same size and checksum found. "
-                    "You will need to manually pick which one to use."
-                )
-                return
+                print(f"Mismatch checksum: local={file_checksum} vs database={database_checksum}")
+        else:
+            print(f"Mismatch size: local={file_size} vs database={database_size}")
+
+    print(f"Found {num_id_matches} ID matches in database.")
 
     if best_match_file_record is None:
         print("FAIL: Could not find database entry to fix timestamp.")
@@ -53,11 +62,12 @@ def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil
         print("PASS: Timestamp updated to match with database.")
 
 
-def fix_files_in_folder(folder: str, mongo_util: MongoUtil, verify_checksum: bool):
-    for root, dirs, files in os.walk(folder, topdown=False):
+def fix_files_in_folder(prefix: str, folder: str, mongo_util: MongoUtil, verify_checksum: bool):
+    root_path = os.path.join(prefix, folder)
+    for root, dirs, files in os.walk(root_path, topdown=False):
         for file_name in files:
             real_file_path = os.path.join(root, file_name)
-            database_file_path = real_file_path.replace(folder, "")
+            database_file_path = real_file_path.replace(prefix, "")
 
             fix_file(real_file_path, database_file_path, mongo_util, verify_checksum)
 
@@ -84,9 +94,12 @@ def main():
 
     with open("timestamp_fix_paths.txt") as input_file:
         for line in input_file.readlines():
-            input_folder = line.strip()
-            print(f"Fixing modified timestamp for folder: {input_folder}")
-            fix_files_in_folder(input_folder, mongo_util, verify_checksum)
+            splits = line.split(",")
+            prefix = splits[0].strip()
+            folder = splits[1].strip()
+            print("===================================================")
+            print(f"Fixing modified timestamp for folder: {folder}")
+            fix_files_in_folder(prefix, folder, mongo_util, verify_checksum)
 
 
 if __name__ == "__main__":
