@@ -11,3 +11,4 @@ recency.pickle
 /files_to_remove_from_recency.txt
 /config.backup.json
 ids_to_remove_from_database.txt
+/tmp*
