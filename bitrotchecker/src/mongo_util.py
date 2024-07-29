@@ -72,7 +72,9 @@ class MongoUtil:
                 return None
             else:
                 # We have seen this file before, but the modified timestamp is different.
-                if file_is_immutable:
+                # We may need to modify par2 files if we add new files to a folder at a later time, so exclude them
+                # from the immutability check even if they are in an immutable folder.
+                if file_is_immutable and (not file_record.file_path.endswith(".par2")):
                     # The file is immutable so we should fail the comparison
                     print(
                         f"Immutable file has been modified: "
