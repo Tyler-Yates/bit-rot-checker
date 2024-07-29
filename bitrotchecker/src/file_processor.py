@@ -3,7 +3,7 @@ from typing import Optional
 
 from bitrotchecker.src.file_record import FileRecord
 from bitrotchecker.src.file_result_enum import FileResultValue
-from bitrotchecker.src.file_util import should_skip_file, get_checksum_of_file
+from bitrotchecker.src.file_util import should_skip_file
 from bitrotchecker.src.logger_util import LoggerUtil
 from bitrotchecker.src.mongo_util import MongoUtil
 from bitrotchecker.src.recency_util import RecencyUtil
@@ -33,11 +33,8 @@ class FileProcessor:
             print(f"Skipping {true_file_path} as processed recently")
             return None
 
-        saved_file_path = true_file_path.replace(path, "")
-        file_size = os.path.getsize(true_file_path)
-        file_crc = get_checksum_of_file(true_file_path)
-
-        file_record = FileRecord(saved_file_path, file_modified_time, file_size, file_crc)
+        file_path = true_file_path.replace(path, "")
+        file_record = FileRecord(file_path=file_path, full_file_path=true_file_path)
         file_result = self.mongo_util.process_file_record(true_file_path, file_record, self.logger, file_is_immutable)
         if file_result.value is FileResultValue.PASS:
             print(f"PASS: {file_result.message} - {file_record}")

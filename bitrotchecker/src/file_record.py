@@ -1,23 +1,33 @@
 import hashlib
+import os
 from datetime import datetime, timezone
 from typing import Dict, Any
 
 from bitrotchecker.src.constants import FILE_ID_KEY, SIZE_KEY, CHECKSUM_KEY, MODIFIED_TIME_KEY, LAST_ACCESSED_KEY
+from bitrotchecker.src.file_util import get_checksum_of_file
 
 
 class FileRecord:
-    def __init__(self, file_path: str, modified_time: float, size: int, checksum: int):
+    def __init__(self, file_path: str, full_file_path: str):
         self.file_path = file_path
-        self.modified_time = modified_time
-        self.size = size
-        self.checksum = checksum
+        self.full_file_path = full_file_path
 
-        self.file_id = self.calculate_file_id(self.file_path)
+    @property
+    def size(self) -> float:
+        return os.path.getsize(self.full_file_path)
 
-    @staticmethod
-    def calculate_file_id(file_path: str):
+    @property
+    def modified_time(self) -> float:
+        return os.path.getmtime(self.full_file_path)
+
+    @property
+    def checksum(self) -> int:
+        return get_checksum_of_file(self.full_file_path)
+
+    @property
+    def file_id(self) -> str:
         hasher = hashlib.sha256()
-        hasher.update(file_path.encode())
+        hasher.update(self.full_file_path.encode())
         return hasher.hexdigest().lower()
 
     def get_mongo_document(self) -> Dict[str, Any]:
@@ -32,8 +42,9 @@ class FileRecord:
         }
 
     def __str__(self):
+        # Don't include CRC as that can be very expensive to calculate
         return (
             f"id={self.file_id} - {self.file_path} -"
             f" Modified '{datetime.fromtimestamp(self.modified_time, tz=timezone.utc)}' -"
-            f" CRC {self.checksum} - {self.size} bytes"
+            f" {self.size} bytes"
         )
