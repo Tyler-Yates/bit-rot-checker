@@ -10,18 +10,16 @@ from bitrotchecker.src.mongo_util import MongoUtil
 
 
 def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil, verify_checksum: bool):
-    file_id = FileRecord.calculate_file_id(database_file_path)
+    file_to_fix = FileRecord(file_path=database_file_path, full_file_path=real_file_path)
 
-    file_mtime = os.path.getmtime(real_file_path)
-    file_size = os.path.getsize(real_file_path)
     # Calculating checksum is expensive, so only do it if necessary
     file_checksum = get_checksum_of_file(real_file_path) if verify_checksum else None
 
     print()
-    print(f"Processing {real_file_path} - {file_id}")
-    print(f"Current Modified Time: {file_mtime}")
+    print(f"Processing {real_file_path} - {file_to_fix.file_id}")
+    print(f"Current Modified Time: {file_to_fix.modified_time}")
 
-    file_records = mongo_util.get_all_records_for_file_id(file_id)
+    file_records = mongo_util.get_all_records_for_file_id(file_to_fix.file_id)
     best_match_file_record: Optional[Dict] = None
     num_id_matches = 0
     for file_record in file_records:
@@ -29,7 +27,7 @@ def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil
         database_size = file_record[SIZE_KEY]
         database_checksum = file_record[CHECKSUM_KEY]
 
-        if database_size == file_size:
+        if database_size == file_to_fix.size:
             if file_checksum is None or database_checksum == file_checksum:
                 print(f"Found a match in database: {file_record}")
                 if best_match_file_record is None:
@@ -43,7 +41,7 @@ def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil
             else:
                 print(f"Mismatch checksum: local={file_checksum} vs database={database_checksum}")
         else:
-            print(f"Mismatch size: local={file_size} vs database={database_size}")
+            print(f"Mismatch size: local={file_to_fix.size} vs database={database_size}")
 
     print(f"Found {num_id_matches} ID matches in database.")
 
@@ -52,7 +50,7 @@ def fix_file(real_file_path: str, database_file_path: str, mongo_util: MongoUtil
     else:
         database_mtime = best_match_file_record[MODIFIED_TIME_KEY]
 
-        if database_mtime == file_mtime:
+        if database_mtime == file_to_fix.modified_time:
             print("SKIP: File mtime already matches database")
             return
 
