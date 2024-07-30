@@ -27,7 +27,7 @@ class FileRecord:
     @property
     def file_id(self) -> str:
         hasher = hashlib.sha256()
-        hasher.update(self.full_file_path.encode())
+        hasher.update(self.file_path.encode())
         return hasher.hexdigest().lower()
 
     def get_mongo_document(self) -> Dict[str, Any]:
