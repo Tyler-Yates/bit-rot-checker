@@ -90,7 +90,7 @@ def main():
     mongo_util = MongoUtil()
     verify_checksum = True
 
-    with open("timestamp_fix_paths.txt") as input_file:
+    with open("timestamp_fix_paths.txt", encoding="utf-8") as input_file:
         for line in input_file.readlines():
             splits = line.split(",")
             prefix = splits[0].strip()
