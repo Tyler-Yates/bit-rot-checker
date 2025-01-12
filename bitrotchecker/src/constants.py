@@ -36,6 +36,7 @@ SKIP_SUFFIXES = [".tmp"]
 MONGO_ID_KEY = "_id"
 FILE_ID_KEY = "file_id"
 MODIFIED_TIME_KEY = "mtime"
+MODIFIED_TIME_S_KEY = "mtime_s"
 SIZE_KEY = "size"
 CHECKSUM_KEY = "checksum"
 LAST_ACCESSED_KEY = "last_accessed"

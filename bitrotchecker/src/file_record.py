@@ -3,7 +3,8 @@ import os
 from datetime import datetime, timezone
 from typing import Dict, Any
 
-from bitrotchecker.src.constants import FILE_ID_KEY, SIZE_KEY, CHECKSUM_KEY, MODIFIED_TIME_KEY, LAST_ACCESSED_KEY
+from bitrotchecker.src.constants import FILE_ID_KEY, SIZE_KEY, CHECKSUM_KEY, MODIFIED_TIME_KEY, LAST_ACCESSED_KEY, \
+    MODIFIED_TIME_S_KEY
 from bitrotchecker.src.file_util import get_checksum_of_file
 
 
@@ -35,6 +36,7 @@ class FileRecord:
             FILE_ID_KEY: self.file_id,
             # We do not save the file_path for privacy reasons
             MODIFIED_TIME_KEY: self.modified_time,
+            MODIFIED_TIME_S_KEY: int(self.modified_time),
             SIZE_KEY: self.size,
             CHECKSUM_KEY: self.checksum,
             # Set the last accessed time to now since we are likely accessing the document
