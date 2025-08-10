@@ -88,7 +88,7 @@ def main():
     print(f"Timezone offset: {utc_offset}")
 
     mongo_util = MongoUtil()
-    verify_checksum = True
+    verify_checksum = False
 
     with open("timestamp_fix_paths.txt", encoding="utf-8") as input_file:
         for line in input_file.readlines():

@@ -36,10 +36,10 @@ class MongoUtil:
             self.files_db: Database = mongo_client.bitrot
 
         self.files_collection: Collection = self.files_db.files
-        self.files_collection.create_index(
-            [(FILE_ID_KEY, pymongo.ASCENDING), (MODIFIED_TIME_KEY, pymongo.ASCENDING)], unique=True
-        )
-        self.files_collection.create_index(LAST_ACCESSED_KEY, expireAfterSeconds=SECONDS_IN_A_YEAR)
+        # self.files_collection.create_index(
+        #     [(FILE_ID_KEY, pymongo.ASCENDING), (MODIFIED_TIME_KEY, pymongo.ASCENDING)], unique=True
+        # )
+        # self.files_collection.create_index(LAST_ACCESSED_KEY, expireAfterSeconds=SECONDS_IN_A_YEAR)
         print("Successfully connected with Mongo")
 
     def _find_document(
